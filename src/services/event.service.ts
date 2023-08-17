@@ -53,6 +53,56 @@ const getEventById = async<Key extends keyof Event>(eventId: string): Promise<Pi
   }
 }
 
+const getEventByCategory = async<Key extends keyof Event>(categoryId: string): Promise<Event[]> => {
+  try {
+    const event = await prisma.event.findMany({
+      where: {
+        categoryId: categoryId,
+      },
+    });
+
+    return event;
+
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(httpStatus.BAD_REQUEST, error as any);
+  }
+}
+
+const getEventByCategoryType = async<Key extends keyof Event>(categoryTypeId: string): Promise<Event[]> => {
+  try {
+    const event = await prisma.event.findMany({
+      where: {
+        categoryTypeId: categoryTypeId,
+      },
+    });
+
+    return event;
+
+  } catch (error) {
+    console.log(error);
+    throw new ApiError(httpStatus.BAD_REQUEST, error as any);
+  }
+}
+
+const getEventByNameSearch = async<Key extends keyof Event>(eventName: string): Promise<Event[]> => {
+  try {
+    const events = await prisma.event.findMany({
+      where: {
+        eventName: {
+          contains: eventName,
+        },
+      },
+    });
+
+    return events;
+  } catch (error) {
+    console.error('Error searching events:', error);
+    throw error;
+  }
+
+}
+
 
 
 async function getPendingEventById(id: string) {
@@ -65,5 +115,8 @@ async function getPendingEventById(id: string) {
 
 export default {
   createEventFromPendingApprove,
-  getEventById
+  getEventById,
+  getEventByCategory,
+  getEventByCategoryType,
+  getEventByNameSearch
 };

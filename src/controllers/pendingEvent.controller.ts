@@ -1,6 +1,5 @@
 import httpStatus from "http-status";
 import { ApiError, catchAsync, pick } from "../utils";
-import { userService } from "../services";
 import pendingEventService from "../services/pendingEvent.service";
 
 const createPendingEvent = catchAsync(async (req, res) => {

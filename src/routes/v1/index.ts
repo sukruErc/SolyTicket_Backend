@@ -1,6 +1,7 @@
 import express, { Router } from "express";
 import userRoute from "./user.route";
 import pendingEventRoute from "./pendingEvent.route";
+import eventRoute from "./event.route";
 
 const router = express.Router();
 
@@ -17,6 +18,10 @@ const routes: Routes[] = [
   {
     path: "/pending-events",
     route: pendingEventRoute,
+  },
+  {
+    path: "/events",
+    route: eventRoute,
   },
 ];
 
