@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(uuid())
+  name          String
+  email         String         @unique
+  type          Role           @default(CUSTOMER)
+  subscribeType SubscribeType  @default(NONE)
+  status        Boolean
+  bcAddress     String
+  mnemonic      String?
+  privateKey    String?
+  password      String
+  image         String?
+  phone         String?
+  birthday      DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  Event         Event[]
+  PendingEvent  PendingEvent[]
+  Tickets       Tickets[]
+
+  @@unique([email, bcAddress])
+}
+
+model Event {
+  id                String       @id @default(uuid())
+  creatorId         User         @relation(fields: [userId], references: [id])
+  date              DateTime
+  desc              String?
+  eventName         String
+  eventCategory     Category     @relation(fields: [categoryId], references: [id])
+  eventCategoryType CategoryType @relation(fields: [categoryTypeId], references: [id])
+  image             String
+  location          String
+  priceLabel        String
+  seatNum           Int
+  time              String
+  userId            String
+  categoryId        String
+  categoryTypeId    String
+}
+
+model PendingEvent {
+  id                String       @id @default(uuid())
+  creatorId         User         @relation(fields: [userId], references: [id])
+  date              DateTime
+  desc              String?
+  eventName         String
+  eventCategory     Category     @relation(fields: [categoryId], references: [id])
+  eventCategoryType CategoryType @relation(fields: [categoryTypeId], references: [id])
+  isActive          Boolean      @default(false)
+  image             String
+  location          String
+  price             String
+  searchTitle       String
+  seatNum           Int
+  time              String
+  userId            String
+  categoryId        String
+  categoryTypeId    String
+  ticketPriceEntity Json
+
+  @@unique([eventName, date])
+}
+
+model Tickets {
+  id             String   @id @default(uuid())
+  creatorId      User     @relation(fields: [userId], references: [id])
+  date           DateTime
+  // eventCategory String
+  // eventType     String
+  ticketTypeName String
+  price          String
+
+  eventCategoryType CategoryType @relation(fields: [categoryTypeId], references: [id])
+  eventCategory     Category     @relation(fields: [categoryId], references: [id])
+  eventName         String
+  userId            String
+  // ticketsWithCategoryAndPrice TicketCategory[] @relation("ticketCategory")
+  categoryId        String
+  categoryTypeId    String
+}
+
+model Category {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  CategoryType CategoryType[]
+  Event        Event[]
+  PendingEvent PendingEvent[]
+  Tickets      Tickets[]
+}
+
+model CategoryType {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  category     Category       @relation(fields: [categoryId], references: [id])
+  categoryId   String
+  PendingEvent PendingEvent[]
+  Event        Event[]
+  Tickets      Tickets[]
+}
+
+enum Role {
+  CUSTOMER
+  ORGANIZER
+  ADMIN
+}
+
+enum SubscribeType {
+  NONE
+  PERSONAL
+  FAMILY
+}
