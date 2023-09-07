@@ -1,6 +1,6 @@
-import app from "./app";
-import { config, logger } from "./config";
-import prisma from "./dbClient";
+import app from "./src/app";
+import { config, logger } from "./src/config";
+import prisma from "./src/dbClient";
 
 const server = app.listen(config.port, () => {
   logger.info(`Listening to port ${config.port}`);

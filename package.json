@@ -2,7 +2,7 @@
   "name": "express-typescript-prisma-boilerplate",
   "version": "0.0.1",
   "description": "REST API Boilerplate with Node JS, TypeScript, Express and Prisma setup",
-  "main": "src/index.ts",
+  "main": "index.ts",
   "author": "Woshikuzzaman",
   "license": "MIT",
   "private": true,
@@ -44,7 +44,7 @@
     "xss-filters": "^1.2.7"
   },
   "scripts": {
-    "dev": "cross-env NODE_ENV=development nodemon src/index.ts",
+    "dev": "cross-env NODE_ENV=development nodemon index.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "prettier": "prettier --check **/*.ts",
