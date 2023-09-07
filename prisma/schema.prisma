@@ -42,13 +42,15 @@ model Event {
   eventCategory     Category     @relation(fields: [categoryId], references: [id])
   eventCategoryType CategoryType @relation(fields: [categoryTypeId], references: [id])
   image             String
-  location          String
+  location          Location     @relation(fields: [locationId], references: [id])
+  eventAddress      String
   priceLabel        String
   seatNum           Int
   time              String
   userId            String
   categoryId        String
   categoryTypeId    String
+  locationId        String
 }
 
 model PendingEvent {
@@ -61,7 +63,8 @@ model PendingEvent {
   eventCategoryType CategoryType @relation(fields: [categoryTypeId], references: [id])
   isActive          Boolean      @default(false)
   image             String
-  location          String
+  location          Location     @relation(fields: [locationId], references: [id])
+  eventAddress      String
   price             String
   searchTitle       String
   seatNum           Int
@@ -70,6 +73,7 @@ model PendingEvent {
   categoryId        String
   categoryTypeId    String
   ticketPriceEntity Json
+  locationId        String
 
   @@unique([eventName, date])
 }
@@ -109,6 +113,13 @@ model CategoryType {
   PendingEvent PendingEvent[]
   Event        Event[]
   Tickets      Tickets[]
+}
+
+model Location {
+  id           String         @id @default(uuid())
+  name         String         @unique
+  Event        Event[]
+  PendingEvent PendingEvent[]
 }
 
 enum Role {

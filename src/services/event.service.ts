@@ -22,11 +22,12 @@ const createEventFromPendingApprove = async (
         eventCategory: { connect: { id: pendingEvent.categoryId } },
         eventCategoryType: { connect: { id: pendingEvent.categoryTypeId } },
         image: pendingEvent.image,
-        location: pendingEvent.location,
+        location: { connect: { id: pendingEvent.locationId } },
+        eventAddress: pendingEvent.eventAddress,
         priceLabel: pendingEvent.price,
         seatNum: pendingEvent.seatNum,
         time: pendingEvent.time,
-        searchTitle: pendingEvent.searchTitle,
+        // searchTitle: pendingEvent.searchTitle,
       },
     });
 

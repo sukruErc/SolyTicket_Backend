@@ -2,6 +2,7 @@ import express, { Router } from "express";
 import userRoute from "./user.route";
 import pendingEventRoute from "./pendingEvent.route";
 import eventRoute from "./event.route";
+import filterTypeRoute from "./filterType.route";
 
 const router = express.Router();
 
@@ -22,6 +23,10 @@ const routes: Routes[] = [
   {
     path: "/events",
     route: eventRoute,
+  },
+  {
+    path: "/filter-type",
+    route: filterTypeRoute,
   },
 ];
 
