@@ -28,6 +28,8 @@ const createUser = async (
   email: string,
   password: string,
   name: string,
+  phone: string,
+  birthday: string,
   type: Role = Role.CUSTOMER,
 ): Promise<string> => {
   if (await getUserByEmail(email)) {
@@ -48,7 +50,8 @@ const createUser = async (
       privateKey: wallet ? wallet.privateKey : "",
       password: hashedPassword,
       image: "String?",
-      phone: "String?",
+      birthday: birthday,
+      phone: phone,
     },
   });
   //todo secrekey

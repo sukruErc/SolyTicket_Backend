@@ -3,8 +3,15 @@ import { ApiError, catchAsync, pick } from "../utils";
 import { userService } from "../services";
 
 const createUser = catchAsync(async (req, res) => {
-  const { email, password, name, role } = req.body;
-  const token = await userService.createUser(email, password, name, role);
+  const { email, password, name, phone, birthday, role } = req.body;
+  const token = await userService.createUser(
+    email,
+    password,
+    name,
+    phone,
+    birthday,
+    role,
+  );
   res.status(httpStatus.CREATED).send({ token });
 });
 

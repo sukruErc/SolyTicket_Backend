@@ -7,6 +7,8 @@ const createUser = {
     password: Joi.string().required(),
     name: Joi.string().required(),
     role: Joi.string().required().valid(Role.CUSTOMER, Role.ORGANIZER),
+    phone: Joi.string().required(),
+    birthday: Joi.string().required(),
   }),
 };
 
