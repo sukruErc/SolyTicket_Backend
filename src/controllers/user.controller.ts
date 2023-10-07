@@ -15,6 +15,25 @@ const createUser = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).send({ token });
 });
 
+const createMetamaskUser = catchAsync(async (req, res) => {
+  const { email, password, wallet, name, birthday, role } = req.body;
+  const token = await userService.createMetamaskUser(
+    email,
+    password,
+    wallet,
+    name,
+    birthday,
+    role,
+  );
+  res.status(httpStatus.CREATED).send({ token });
+});
+
+const createGoogleUser = catchAsync(async (req, res) => {
+  const { email, picture, name, role } = req.body;
+  const token = await userService.createGoogleUser(email, picture, name, role);
+  res.status(httpStatus.CREATED).send({ token });
+});
+
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
   const token = await userService.login(email, password);
@@ -48,6 +67,8 @@ const deleteUser = catchAsync(async (req, res) => {
 
 export default {
   createUser,
+  createMetamaskUser,
+  createGoogleUser,
   login,
   getUsers,
   getUser,

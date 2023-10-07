@@ -12,6 +12,26 @@ const createUser = {
   }),
 };
 
+const createMetamaskUser = {
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    password: Joi.string().required(),
+    wallet: Joi.string().required(),
+    name: Joi.string().required(),
+    role: Joi.string().required().valid(Role.CUSTOMER, Role.ORGANIZER),
+    birthday: Joi.string().required(),
+  }),
+};
+
+const createGoogleUser = {
+  body: Joi.object().keys({
+    email: Joi.string().required().email(),
+    picture: Joi.string().required(),
+    name: Joi.string().required(),
+    role: Joi.string().required().valid(Role.CUSTOMER, Role.ORGANIZER),
+  }),
+};
+
 const login = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
@@ -55,6 +75,8 @@ const deleteUser = {
 
 export default {
   createUser,
+  createMetamaskUser,
+  createGoogleUser,
   login,
   getUsers,
   getUser,

@@ -7,12 +7,25 @@ const router = express.Router();
 
 router
   .route("/")
-  // .post(validate(userValidation.createUser), userController.createUser)
   .get(validate(userValidation.getUsers), userController.getUsers);
 
 router
   .route("/signup")
   .post(validate(userValidation.createUser), userController.createUser);
+
+router
+  .route("/metamask-signup")
+  .post(
+    validate(userValidation.createMetamaskUser),
+    userController.createMetamaskUser,
+  );
+
+router
+  .route("/google-signup")
+  .post(
+    validate(userValidation.createGoogleUser),
+    userController.createGoogleUser,
+  );
 
 router
   .route("/login")

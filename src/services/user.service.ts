@@ -66,6 +66,81 @@ const createUser = async (
   return accessToken;
 };
 
+const createGoogleUser = async (
+  email: string,
+  picture: string,
+  name: string,
+  type: Role = Role.CUSTOMER,
+): Promise<string> => {
+  if (await getUserByEmail(email)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+  }
+  const wallet = await blockchainService.createMetamaskWallet();
+
+  const newUser = await prisma.user.create({
+    data: {
+      email,
+      name,
+      type,
+      status: true,
+      bcAddress: wallet ? wallet.address : "",
+      mnemonic: wallet ? wallet.mnemonic?.phrase : "",
+      privateKey: wallet ? wallet.privateKey : "",
+      password: "",
+      image: picture,
+    },
+  });
+  //todo secrekey
+  const accessToken = jwt.sign(
+    { userId: newUser.id, role: newUser.type },
+    "secretKey",
+    {
+      expiresIn: "1d",
+    },
+  );
+
+  return accessToken;
+};
+
+const createMetamaskUser = async (
+  email: string,
+  password: string,
+  wallet: string,
+  name: string,
+  birthday: string,
+  type: Role = Role.CUSTOMER,
+): Promise<string> => {
+  if (await getUserByEmail(email)) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+  }
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const newUser = await prisma.user.create({
+    data: {
+      email,
+      name,
+      type,
+      status: true,
+      bcAddress: wallet,
+      mnemonic: "",
+      privateKey: "",
+      password: hashedPassword,
+      image: "String?",
+      birthday: birthday,
+    },
+  });
+  //todo secrekey
+  const accessToken = jwt.sign(
+    { userId: newUser.id, role: newUser.type },
+    "secretKey",
+    {
+      expiresIn: "1d",
+    },
+  );
+
+  return accessToken;
+};
+
 const login = async (email: string, password: string): Promise<string> => {
   const user = await getUserByEmail(email);
   if (!user) {
@@ -175,6 +250,8 @@ const deleteUserById = async (userId: string): Promise<User> => {
 
 export default {
   createUser,
+  createMetamaskUser,
+  createGoogleUser,
   login,
   queryUsers,
   getUserById,
