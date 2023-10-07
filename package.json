@@ -50,7 +50,8 @@
     "prettier": "prettier --check **/*.ts",
     "prettier:fix": "prettier --write **/*.ts",
     "prepare": "husky install",
-    "build": "rimraf build && tsc"
+    "build": "rimraf build && tsc",
+    "prod": "cross-env NODE_ENV=development node build/index.js"
   },
   "lint-staged": {
     "**/*": "prettier --write --ignore-unknown"
