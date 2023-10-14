@@ -3,6 +3,7 @@ import userRoute from "./user.route";
 import pendingEventRoute from "./pendingEvent.route";
 import eventRoute from "./event.route";
 import filterTypeRoute from "./filterType.route";
+import memoryTicketRoute from "./memoryTicket.route";
 
 const router = express.Router();
 
@@ -27,6 +28,10 @@ const routes: Routes[] = [
   {
     path: "/filter-type",
     route: filterTypeRoute,
+  },
+  {
+    path: "/memory-ticket",
+    route: memoryTicketRoute,
   },
 ];
 
