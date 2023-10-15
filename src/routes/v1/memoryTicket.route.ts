@@ -1,10 +1,24 @@
 import express from "express";
 import memoryTicketController from "../../controllers/memoryTicket.controller";
+import validate from "../../middlewares/validate";
+import memoryTicketValidation from "../../validations/memoryTicket.validation";
+import authenticateMiddleware from "../../middlewares/authenticate";
 
 const router = express.Router();
 
 router
+  .route("/create-contract-for-memory")
+  .post(
+    validate(memoryTicketValidation.createMemoryContract),
+    memoryTicketController.createMemoryContract,
+  );
+
+router
   .route("/generate-memory-ticket")
-  .post(memoryTicketController.generateMemoryTicket);
+  .post(
+    validate(memoryTicketValidation.createMemoryTicket),
+    authenticateMiddleware,
+    memoryTicketController.generateMemoryTicket,
+  );
 
 export default router;

@@ -29,6 +29,7 @@ model User {
   Event         Event[]
   PendingEvent  PendingEvent[]
   Tickets       Tickets[]
+  MemoryTicket  MemoryTicket[]
 
   @@unique([email, bcAddress])
 }
@@ -94,6 +95,23 @@ model Tickets {
   // ticketsWithCategoryAndPrice TicketCategory[] @relation("ticketCategory")
   categoryId        String
   categoryTypeId    String
+}
+
+model MemoryTicket {
+  id              Int           @id @default(autoincrement())
+  owner           User          @relation(fields: [userId], references: [id])
+  tokenId         Int
+  userId          String
+  contract        SmartContract @relation(fields: [smartContractId], references: [id])
+  smartContractId String
+}
+
+model SmartContract {
+  id               String         @id @default(uuid())
+  activityName     String
+  contractAdress   String
+  contractCapacity Int
+  MemoryTicket     MemoryTicket[]
 }
 
 model Category {
