@@ -32,7 +32,15 @@ const createMemoryContract = catchAsync(async (req, res) => {
   res.send(data);
 });
 
+const imageGenerator = catchAsync(async (req, res) => {
+  const { displayName } = req.body;
+  const data = await memoryTicketService.imageWithLabelConverter(displayName);
+
+  res.send(data);
+});
+
 export default {
   generateMemoryTicket,
   createMemoryContract,
+  imageGenerator,
 };

@@ -217,22 +217,20 @@ async function transferNFT(
 }
 
 async function imageWithLabelConverter(displayName: string): Promise<string> {
-  const image = await loadImage(
-    "C:/Users/Sukru Can Ercoban/Downloads/29ekim.jpg",
-  );
+  const image = await loadImage("C:/Users/T470/Documents/29_memory.png");
 
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext("2d");
 
   ctx.drawImage(image, 0, 0);
 
-  ctx.font = "60px sans-serif";
+  ctx.font = "140px sans-serif";
 
-  ctx.fillStyle = "red";
+  ctx.fillStyle = "white";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
 
-  ctx.fillText(displayName, canvas.width / 2 - 500, canvas.height / 2 - 500);
+  ctx.fillText(displayName, canvas.width / 2, canvas.height / 2 - 600);
 
   const base64Image = canvas.toDataURL("image/jpeg");
   return base64Image;
@@ -300,4 +298,5 @@ async function createMemoryContract(
 export default {
   generateMemoryTicket,
   createMemoryContract,
+  imageWithLabelConverter,
 };

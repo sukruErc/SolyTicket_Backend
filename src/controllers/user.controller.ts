@@ -3,7 +3,7 @@ import { ApiError, catchAsync, pick } from "../utils";
 import { userService } from "../services";
 
 const createUser = catchAsync(async (req, res) => {
-  const { email, password, name, phone, birthday, role } = req.body;
+  const { email, password, name, phone, birthday, role, nameForNFT } = req.body;
   const token = await userService.createUser(
     email,
     password,
@@ -11,12 +11,14 @@ const createUser = catchAsync(async (req, res) => {
     phone,
     birthday,
     role,
+    nameForNFT,
   );
   res.status(httpStatus.CREATED).send({ token });
 });
 
 const createMetamaskUser = catchAsync(async (req, res) => {
-  const { email, password, wallet, name, birthday, role } = req.body;
+  const { email, password, wallet, name, birthday, role, nameForNFT } =
+    req.body;
   const token = await userService.createMetamaskUser(
     email,
     password,
@@ -24,13 +26,20 @@ const createMetamaskUser = catchAsync(async (req, res) => {
     name,
     birthday,
     role,
+    nameForNFT,
   );
   res.status(httpStatus.CREATED).send({ token });
 });
 
 const createGoogleUser = catchAsync(async (req, res) => {
-  const { email, picture, name, role } = req.body;
-  const token = await userService.createGoogleUser(email, picture, name, role);
+  const { email, picture, name, role, nameForNFT } = req.body;
+  const token = await userService.createGoogleUser(
+    email,
+    picture,
+    name,
+    role,
+    nameForNFT,
+  );
   res.status(httpStatus.CREATED).send({ token });
 });
 

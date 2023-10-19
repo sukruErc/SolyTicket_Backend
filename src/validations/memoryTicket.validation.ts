@@ -15,7 +15,14 @@ const createMemoryTicket = {
   }),
 };
 
+const imageGenerator = {
+  body: Joi.object().keys({
+    displayName: Joi.string().required(),
+  }),
+};
+
 export default {
   createMemoryContract,
   createMemoryTicket,
+  imageGenerator,
 };

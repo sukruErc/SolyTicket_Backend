@@ -5,6 +5,7 @@ import prisma from "../dbClient";
 import blockchainService from "./blockchain.service";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import memoryTicketService from "./memoryTicket.service";
 
 const USER_KEYS = [
   "id",
@@ -31,6 +32,7 @@ const createUser = async (
   phone: string,
   birthday: string,
   type: Role = Role.CUSTOMER,
+  nameForNFT?: string,
 ): Promise<string> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
@@ -55,6 +57,11 @@ const createUser = async (
     },
   });
   //todo secrekey
+
+  if (nameForNFT) {
+    memoryTicketService.generateMemoryTicket(nameForNFT, "ttestt", newUser.id);
+  }
+
   const accessToken = jwt.sign(
     { userId: newUser.id, role: newUser.type },
     "secretKey",
@@ -71,6 +78,7 @@ const createGoogleUser = async (
   picture: string,
   name: string,
   type: Role = Role.CUSTOMER,
+  nameForNFT?: string,
 ): Promise<string> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
@@ -109,6 +117,7 @@ const createMetamaskUser = async (
   name: string,
   birthday: string,
   type: Role = Role.CUSTOMER,
+  nameForNFT?: string,
 ): Promise<string> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");

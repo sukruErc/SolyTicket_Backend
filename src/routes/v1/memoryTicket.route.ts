@@ -21,4 +21,11 @@ router
     memoryTicketController.generateMemoryTicket,
   );
 
+router
+  .route("/generate-memory-image")
+  .post(
+    validate(memoryTicketValidation.imageGenerator),
+    memoryTicketController.imageGenerator,
+  );
+
 export default router;
