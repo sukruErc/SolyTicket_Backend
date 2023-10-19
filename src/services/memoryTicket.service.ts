@@ -22,6 +22,7 @@ const PublicKey = "0x827f629C4b70D99c2564F499bB6B0b7D554b3b7B";
 const rpcUrl = "https://rpc-mumbai.maticvigil.com";
 // ipfs node url
 const ipfsBaseUrl = "https://ipfs.io/ipfs/";
+registerFont("./Oswald-VariableFont_wght.ttf", { family: "Oswald ExtraLight" });
 
 const ipfsClient = () => {
   const ipfs = create({
@@ -217,14 +218,16 @@ async function transferNFT(
 }
 
 async function imageWithLabelConverter(displayName: string): Promise<string> {
-  const image = await loadImage("C:/Users/T470/Documents/29_memory.png");
+  const image = await loadImage(
+    "C:/Users/Sukru Can Ercoban/Downloads/29_memory.png",
+  );
 
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext("2d");
 
   ctx.drawImage(image, 0, 0);
 
-  ctx.font = "140px sans-serif";
+  ctx.font = '140px "Oswald ExtraLight"';
 
   ctx.fillStyle = "white";
   ctx.textAlign = "center";

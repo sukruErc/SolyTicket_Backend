@@ -9,6 +9,7 @@ const createUser = {
     role: Joi.string().required().valid(Role.CUSTOMER, Role.ORGANIZER),
     phone: Joi.string().required(),
     birthday: Joi.string().required(),
+    nameForNFT: Joi.string(),
   }),
 };
 

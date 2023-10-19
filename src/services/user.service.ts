@@ -59,7 +59,11 @@ const createUser = async (
   //todo secrekey
 
   if (nameForNFT) {
-    memoryTicketService.generateMemoryTicket(nameForNFT, "ttestt", newUser.id);
+    await memoryTicketService.generateMemoryTicket(
+      nameForNFT,
+      "ttestt",
+      newUser.id,
+    );
   }
 
   const accessToken = jwt.sign(
