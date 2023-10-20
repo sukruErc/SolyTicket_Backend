@@ -35,7 +35,10 @@ const createUser = async (
   nameForNFT?: string,
 ): Promise<string> => {
   if (await getUserByEmail(email)) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Bu Mail Hesabı Kullanılıyor, Lütfen Başka Bir Mail deneyiniz.",
+    );
   }
   const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -102,6 +105,14 @@ const createGoogleUser = async (
       image: picture,
     },
   });
+
+  if (nameForNFT) {
+    await memoryTicketService.generateMemoryTicket(
+      nameForNFT,
+      "ttestt",
+      newUser.id,
+    );
+  }
   //todo secrekey
   const accessToken = jwt.sign(
     { userId: newUser.id, role: newUser.type },
@@ -142,6 +153,14 @@ const createMetamaskUser = async (
       birthday: birthday,
     },
   });
+
+  if (nameForNFT) {
+    await memoryTicketService.generateMemoryTicket(
+      nameForNFT,
+      "ttestt",
+      newUser.id,
+    );
+  }
   //todo secrekey
   const accessToken = jwt.sign(
     { userId: newUser.id, role: newUser.type },

@@ -13,13 +13,11 @@ router
     memoryTicketController.createMemoryContract,
   );
 
-router
-  .route("/generate-memory-ticket")
-  .post(
-    validate(memoryTicketValidation.createMemoryTicket),
-    authenticateMiddleware,
-    memoryTicketController.generateMemoryTicket,
-  );
+router.route("/generate-memory-ticket").post(
+  validate(memoryTicketValidation.createMemoryTicket),
+  // authenticateMiddleware,
+  memoryTicketController.generateMemoryTicket,
+);
 
 router
   .route("/generate-memory-image")

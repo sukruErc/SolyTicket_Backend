@@ -21,6 +21,7 @@ const createMetamaskUser = {
     name: Joi.string().required(),
     role: Joi.string().required().valid(Role.CUSTOMER, Role.ORGANIZER),
     birthday: Joi.string().required(),
+    nameForNFT: Joi.string(),
   }),
 };
 
@@ -30,6 +31,7 @@ const createGoogleUser = {
     picture: Joi.string().required(),
     name: Joi.string().required(),
     role: Joi.string().required().valid(Role.CUSTOMER, Role.ORGANIZER),
+    nameForNFT: Joi.string(),
   }),
 };
 

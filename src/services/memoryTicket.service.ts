@@ -58,12 +58,30 @@ async function generateMemoryTicket(
       throw new ApiError(httpStatus.BAD_REQUEST, "Contract did not found");
     }
 
+    const existingUser = await prisma.memoryTicket.findFirst({
+      where: {
+        smartContractId: contract?.id,
+        userId: userId,
+      },
+    });
+
+    if (existingUser) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "User with userId already exists in memoryTicket",
+      );
+    }
+
     const memoryTicket = await prisma.memoryTicket.findMany({
-      where: { smartContractId: contract?.id },
+      where: {
+        smartContractId: contract?.id,
+        userId: { not: userId },
+      },
     });
     if (memoryTicket.length > contract.contractCapacity) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Out of limit");
     }
+
     console.log(memoryTicket.length);
     const imageString = await imageWithLabelConverter(displayName);
     const ipfsConverted = await loadIpfs(
@@ -86,7 +104,7 @@ async function generateMemoryTicket(
     );
 
     if (res) {
-      return imageString;
+      return "imageString";
     }
     throw new ApiError(httpStatus.BAD_REQUEST, "İşlem Başarısız");
   } catch (error) {
@@ -218,9 +236,7 @@ async function transferNFT(
 }
 
 async function imageWithLabelConverter(displayName: string): Promise<string> {
-  const image = await loadImage(
-    "C:/Users/Sukru Can Ercoban/Downloads/29_memory.png",
-  );
+  const image = await loadImage("C:/Users/T470/Documents/29_memory.png");
 
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext("2d");
