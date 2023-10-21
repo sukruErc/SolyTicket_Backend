@@ -26,4 +26,18 @@ router
     memoryTicketController.imageGenerator,
   );
 
+router
+  .route("/get-user-info-for-memory")
+  .get(
+    validate(memoryTicketValidation.getUserInfoForMemory),
+    memoryTicketController.getUserInfoForMemory,
+  );
+
+router
+  .route("/get-NFT-metaData")
+  .get(
+    validate(memoryTicketValidation.getNFTmetaData),
+    memoryTicketController.getNFTmetaData,
+  );
+
 export default router;

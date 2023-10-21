@@ -9,6 +9,9 @@ import prisma from "../dbClient";
 import { ApiError } from "../utils";
 import httpStatus from "http-status";
 import { createCanvas, loadImage, registerFont } from "canvas";
+import Web3 from "web3";
+import { Alchemy } from "alchemy-sdk";
+import axios from "axios";
 
 // Infura credentials
 const projectId = "2J8ZK6Xi0RsGXdagpUTp72KizhP";
@@ -23,6 +26,10 @@ const rpcUrl = "https://rpc-mumbai.maticvigil.com";
 // ipfs node url
 const ipfsBaseUrl = "https://ipfs.io/ipfs/";
 registerFont("./Oswald-VariableFont_wght.ttf", { family: "Oswald ExtraLight" });
+//alchemy
+const apiKey = "UmemkVUs4Lzk2SRvGORKFH8stUI3ksts";
+const achBaseUrl = "https://polygon-mumbai.g.alchemy.com/v2/";
+const achUrl = `${achBaseUrl}${apiKey}`;
 
 const ipfsClient = () => {
   const ipfs = create({
@@ -68,14 +75,13 @@ async function generateMemoryTicket(
     if (existingUser) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
-        "User with userId already exists in memoryTicket",
+        "Bir hesaptan sadece bir tane alabilirsiniz!",
       );
     }
 
     const memoryTicket = await prisma.memoryTicket.findMany({
       where: {
         smartContractId: contract?.id,
-        userId: { not: userId },
       },
     });
     if (memoryTicket.length > contract.contractCapacity) {
@@ -104,7 +110,7 @@ async function generateMemoryTicket(
     );
 
     if (res) {
-      return "imageString";
+      return imageString;
     }
     throw new ApiError(httpStatus.BAD_REQUEST, "İşlem Başarısız");
   } catch (error) {
@@ -236,7 +242,9 @@ async function transferNFT(
 }
 
 async function imageWithLabelConverter(displayName: string): Promise<string> {
-  const image = await loadImage("C:/Users/T470/Documents/29_memory.png");
+  const image = await loadImage(
+    "C:/Users/Sukru Can Ercoban/Downloads/29_memory.png",
+  );
 
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext("2d");
@@ -313,9 +321,124 @@ async function createMemoryContract(
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
 }
+async function getUserInfoForMemory(
+  userId: string,
+  activityName: string,
+): Promise<any> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+    if (!user) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "User did not found");
+    }
+
+    const contract = await prisma.smartContract.findFirst({
+      where: { activityName: activityName },
+      // select: { id: true },
+    });
+    if (!contract) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Contract did not found");
+    }
+
+    const existingUser = await prisma.memoryTicket.findFirst({
+      where: {
+        smartContractId: contract?.id,
+        userId: userId,
+      },
+    });
+
+    if (!existingUser) {
+      return { isExist: false };
+    }
+
+    const memoryTicket = await prisma.memoryTicket.findMany({
+      where: {
+        smartContractId: contract?.id,
+        userId: userId,
+      },
+    });
+
+    let obj = {
+      bcAddress: user.bcAddress,
+      mnemonicIsShown: user.mnemonicIsShown,
+    };
+
+    return obj;
+  } catch (error) {
+    throw new ApiError(httpStatus.BAD_REQUEST, error as any);
+  }
+}
+
+async function getNFTmetaData(
+  userId: string,
+  activityName: string,
+): Promise<any> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+  });
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "User did not found");
+  }
+  const contract = await prisma.smartContract.findFirst({
+    where: { activityName: activityName },
+    // select: { id: true },
+  });
+  if (!contract) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Contract did not found");
+  }
+  const existingUser = await prisma.memoryTicket.findFirst({
+    where: {
+      smartContractId: contract?.id,
+      userId: userId,
+    },
+  });
+
+  if (!existingUser) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Account doesnt have specified nft!",
+    );
+  }
+  const options = {
+    method: "GET",
+    url: `${achUrl}/getNFTs`,
+    params: {
+      owner: user.bcAddress,
+      "contractAddresses[]": contract.contractAdress,
+      withMetadata: "true",
+      pageSize: "100",
+    },
+    headers: { accept: "application/json" },
+  };
+
+  try {
+    const response = await axios.request(options);
+    let nftImage;
+    if (response.data) {
+      const arr = response.data?.ownedNfts;
+      for (let index = 0; index < arr.length; index++) {
+        const element = arr[index];
+        if (
+          element.contract?.address ==
+          contract.contractAdress.toLocaleLowerCase()
+        ) {
+          nftImage = element.metadata?.image;
+          break;
+        }
+      }
+    }
+
+    return nftImage;
+  } catch (error) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "error in ach api!");
+  }
+}
 
 export default {
   generateMemoryTicket,
   createMemoryContract,
   imageWithLabelConverter,
+  getUserInfoForMemory,
+  getNFTmetaData,
 };

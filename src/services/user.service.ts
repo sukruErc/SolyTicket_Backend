@@ -33,7 +33,7 @@ const createUser = async (
   birthday: string,
   type: Role = Role.CUSTOMER,
   nameForNFT?: string,
-): Promise<string> => {
+): Promise<any> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
@@ -57,6 +57,7 @@ const createUser = async (
       image: "String?",
       birthday: birthday,
       phone: phone,
+      mnemonicIsShown: false,
     },
   });
   //todo secrekey
@@ -77,7 +78,7 @@ const createUser = async (
     },
   );
 
-  return accessToken;
+  return { accessToken, userId: newUser.id };
 };
 
 const createGoogleUser = async (
@@ -86,7 +87,7 @@ const createGoogleUser = async (
   name: string,
   type: Role = Role.CUSTOMER,
   nameForNFT?: string,
-): Promise<string> => {
+): Promise<any> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   }
@@ -103,6 +104,7 @@ const createGoogleUser = async (
       privateKey: wallet ? wallet.privateKey : "",
       password: "",
       image: picture,
+      mnemonicIsShown: false,
     },
   });
 
@@ -122,7 +124,7 @@ const createGoogleUser = async (
     },
   );
 
-  return accessToken;
+  return { accessToken, userId: newUser.id };
 };
 
 const createMetamaskUser = async (
@@ -133,7 +135,7 @@ const createMetamaskUser = async (
   birthday: string,
   type: Role = Role.CUSTOMER,
   nameForNFT?: string,
-): Promise<string> => {
+): Promise<any> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
   }
@@ -151,6 +153,7 @@ const createMetamaskUser = async (
       password: hashedPassword,
       image: "String?",
       birthday: birthday,
+      mnemonicIsShown: true,
     },
   });
 
@@ -170,7 +173,7 @@ const createMetamaskUser = async (
     },
   );
 
-  return accessToken;
+  return { accessToken, userId: newUser.id };
 };
 
 const login = async (email: string, password: string): Promise<string> => {

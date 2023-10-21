@@ -15,7 +15,7 @@ const generateMemoryTicket = catchAsync(async (req, res) => {
     throw new ApiError(httpStatus.NOT_FOUND, "events could not found");
   }
 
-  res.send("data");
+  res.send({ data });
 });
 
 const createMemoryContract = catchAsync(async (req, res) => {
@@ -36,8 +36,34 @@ const imageGenerator = catchAsync(async (req, res) => {
   res.send(data);
 });
 
+const getUserInfoForMemory = catchAsync(async (req, res) => {
+  const { activityName, userId } = req.query;
+
+  const data = await memoryTicketService.getUserInfoForMemory(
+    userId as string,
+    activityName as string,
+  );
+  if (!data) {
+    throw new ApiError(httpStatus.NOT_FOUND, "events could not found");
+  }
+
+  res.send(data);
+});
+
+const getNFTmetaData = catchAsync(async (req, res) => {
+  const { userId, activityName } = req.query;
+
+  const data = await memoryTicketService.getNFTmetaData(
+    userId as string,
+    activityName as string,
+  );
+  res.send(data);
+});
+
 export default {
   generateMemoryTicket,
   createMemoryContract,
   imageGenerator,
+  getUserInfoForMemory,
+  getNFTmetaData,
 };

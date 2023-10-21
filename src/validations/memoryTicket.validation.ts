@@ -16,6 +16,20 @@ const createMemoryTicket = {
   }),
 };
 
+const getUserInfoForMemory = {
+  query: Joi.object().keys({
+    userId: Joi.string().required(),
+    activityName: Joi.string().required(),
+  }),
+};
+
+const getNFTmetaData = {
+  query: Joi.object().keys({
+    userId: Joi.string().required(),
+    activityName: Joi.string().required(),
+  }),
+};
+
 const imageGenerator = {
   body: Joi.object().keys({
     displayName: Joi.string().required(),
@@ -26,4 +40,6 @@ export default {
   createMemoryContract,
   createMemoryTicket,
   imageGenerator,
+  getUserInfoForMemory,
+  getNFTmetaData,
 };

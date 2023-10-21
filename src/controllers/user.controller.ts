@@ -4,7 +4,7 @@ import { userService } from "../services";
 
 const createUser = catchAsync(async (req, res) => {
   const { email, password, name, phone, birthday, role, nameForNFT } = req.body;
-  const token = await userService.createUser(
+  const data = await userService.createUser(
     email,
     password,
     name,
@@ -13,13 +13,13 @@ const createUser = catchAsync(async (req, res) => {
     role,
     nameForNFT,
   );
-  res.status(httpStatus.CREATED).send({ token });
+  res.status(httpStatus.CREATED).send(data);
 });
 
 const createMetamaskUser = catchAsync(async (req, res) => {
   const { email, password, wallet, name, birthday, role, nameForNFT } =
     req.body;
-  const token = await userService.createMetamaskUser(
+  const data = await userService.createMetamaskUser(
     email,
     password,
     wallet,
@@ -28,19 +28,19 @@ const createMetamaskUser = catchAsync(async (req, res) => {
     role,
     nameForNFT,
   );
-  res.status(httpStatus.CREATED).send({ token });
+  res.status(httpStatus.CREATED).send(data);
 });
 
 const createGoogleUser = catchAsync(async (req, res) => {
   const { email, picture, name, role, nameForNFT } = req.body;
-  const token = await userService.createGoogleUser(
+  const data = await userService.createGoogleUser(
     email,
     picture,
     name,
     role,
     nameForNFT,
   );
-  res.status(httpStatus.CREATED).send({ token });
+  res.status(httpStatus.CREATED).send(data);
 });
 
 const login = catchAsync(async (req, res) => {
