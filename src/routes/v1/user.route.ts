@@ -10,6 +10,10 @@ router
   .get(validate(userValidation.getUsers), userController.getUsers);
 
 router
+  .route("/get-mne")
+  .get(validate(userValidation.getMne), userController.getMne);
+
+router
   .route("/signup")
   .post(validate(userValidation.createUser), userController.createUser);
 

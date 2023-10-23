@@ -65,7 +65,7 @@ const createUser = async (
   if (nameForNFT) {
     await memoryTicketService.generateMemoryTicket(
       nameForNFT,
-      "ttestt",
+      "ttestt3",
       newUser.id,
     );
   }
@@ -111,7 +111,7 @@ const createGoogleUser = async (
   if (nameForNFT) {
     await memoryTicketService.generateMemoryTicket(
       nameForNFT,
-      "ttestt",
+      "ttestt3",
       newUser.id,
     );
   }
@@ -283,6 +283,30 @@ const deleteUserById = async (userId: string): Promise<User> => {
   return user;
 };
 
+const getMne = async (userId: string): Promise<string> => {
+  const user = await getUserById(userId);
+
+  if (!user) {
+    throw new ApiError(httpStatus.NOT_FOUND, "User not found");
+  }
+
+  if (user.mnemonicIsShown) {
+    throw new ApiError(
+      httpStatus.NOT_FOUND,
+      "Kullanıcı bu işlemi gerçekleştiremez",
+    );
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      mnemonicIsShown: true,
+    },
+  });
+
+  return user.mnemonic as string;
+};
+
 export default {
   createUser,
   createMetamaskUser,
@@ -293,4 +317,5 @@ export default {
   getUserByEmail,
   updateUserById,
   deleteUserById,
+  getMne,
 };

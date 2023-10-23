@@ -52,6 +52,12 @@ const getUsers = {
   }),
 };
 
+const getMne = {
+  query: Joi.object().keys({
+    userId: Joi.string(),
+  }),
+};
+
 const getUser = {
   params: Joi.object().keys({
     userId: Joi.string().required(),
@@ -85,4 +91,5 @@ export default {
   getUser,
   updateUser,
   deleteUser,
+  getMne,
 };

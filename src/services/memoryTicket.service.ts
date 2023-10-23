@@ -50,13 +50,14 @@ async function generateMemoryTicket(
   userId: string,
 ): Promise<string> {
   try {
+    console.log("11111111");
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
     if (!user) {
       throw new ApiError(httpStatus.BAD_REQUEST, "User did not found");
     }
-
+    console.log(user);
     const contract = await prisma.smartContract.findFirst({
       where: { activityName: activityName },
       // select: { id: true },
@@ -64,21 +65,22 @@ async function generateMemoryTicket(
     if (!contract) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Contract did not found");
     }
-
+    console.log(contract);
     const existingUser = await prisma.memoryTicket.findFirst({
       where: {
         smartContractId: contract?.id,
         userId: userId,
       },
     });
-
+    console.log("44444444444");
+    console.log(existingUser);
     if (existingUser) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         "Bir hesaptan sadece bir tane alabilirsiniz!",
       );
     }
-
+    console.log("5555555");
     const memoryTicket = await prisma.memoryTicket.findMany({
       where: {
         smartContractId: contract?.id,
@@ -87,6 +89,8 @@ async function generateMemoryTicket(
     if (memoryTicket.length > contract.contractCapacity) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Out of limit");
     }
+
+    console.log(memoryTicket);
 
     console.log(memoryTicket.length);
     const imageString = await imageWithLabelConverter(displayName);
@@ -242,9 +246,7 @@ async function transferNFT(
 }
 
 async function imageWithLabelConverter(displayName: string): Promise<string> {
-  const image = await loadImage(
-    "C:/Users/Sukru Can Ercoban/Downloads/29_memory.png",
-  );
+  const image = await loadImage("C:/Users/T470/Documents/29_memory.png");
 
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext("2d");
@@ -316,6 +318,7 @@ async function createMemoryContract(
         contractCapacity: numberOfTickets,
       },
     });
+    console.log(newSmartContract);
     return _contractAddress;
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
@@ -332,6 +335,7 @@ async function getUserInfoForMemory(
     if (!user) {
       throw new ApiError(httpStatus.BAD_REQUEST, "User did not found");
     }
+    console.log(user.id);
 
     const contract = await prisma.smartContract.findFirst({
       where: { activityName: activityName },
@@ -340,6 +344,7 @@ async function getUserInfoForMemory(
     if (!contract) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Contract did not found");
     }
+    console.log(contract.id);
 
     const existingUser = await prisma.memoryTicket.findFirst({
       where: {
@@ -347,7 +352,7 @@ async function getUserInfoForMemory(
         userId: userId,
       },
     });
-
+    console.log(existingUser);
     if (!existingUser) {
       return { isExist: false };
     }
@@ -393,7 +398,7 @@ async function getNFTmetaData(
       userId: userId,
     },
   });
-
+  console.log(existingUser);
   if (!existingUser) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,

@@ -74,6 +74,12 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const getMne = catchAsync(async (req, res) => {
+  const { userId } = req.query;
+  const mnemonic = await userService.getMne(userId as string);
+  res.send(mnemonic);
+});
+
 export default {
   createUser,
   createMetamaskUser,
@@ -83,4 +89,5 @@ export default {
   getUser,
   updateUser,
   deleteUser,
+  getMne,
 };
