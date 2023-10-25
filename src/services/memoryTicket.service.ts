@@ -272,15 +272,6 @@ async function createMemoryContract(
 ): Promise<any> {
   try {
     console.log("create nft");
-    // const private_key = process.env.PRIVATE_KEY_FOR_WALLET || 'defaultPrivateKey';
-    // console.log(private_key);
-    // const public_key = process.env.PublicKey ;
-    // console.log(public_key);
-    // const rpc_URL = process.env.rpcUrl;
-    // console.log(rpc_URL);
-    // const PRIVATE_KEY_FOR_WALLET = '1b0dba0820797c1187850d3defc0546048b8b4b1c85203bbf34e24b447414328';
-    // const rpcUrl = 'https://rpc-mumbai.maticvigil.com';
-
     const contractNameToDeploy = "SolyTicket - " + contractName;
     const customHttpProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     const wallet = new ethers.Wallet(
