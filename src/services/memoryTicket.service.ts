@@ -45,19 +45,18 @@ const ipfsClient = () => {
 };
 
 async function generateMemoryTicket(
+  image: string,
   displayName: string,
   activityName: string,
   userId: string,
 ): Promise<string> {
   try {
-    console.log("11111111");
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
     if (!user) {
       throw new ApiError(httpStatus.BAD_REQUEST, "User did not found");
     }
-    console.log(user);
     const contract = await prisma.smartContract.findFirst({
       where: { activityName: activityName },
       // select: { id: true },
@@ -65,22 +64,19 @@ async function generateMemoryTicket(
     if (!contract) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Contract did not found");
     }
-    console.log(contract);
     const existingUser = await prisma.memoryTicket.findFirst({
       where: {
         smartContractId: contract?.id,
         userId: userId,
       },
     });
-    console.log("44444444444");
-    console.log(existingUser);
+
     if (existingUser) {
       throw new ApiError(
         httpStatus.BAD_REQUEST,
         "Bir hesaptan sadece bir tane alabilirsiniz!",
       );
     }
-    console.log("5555555");
     const memoryTicket = await prisma.memoryTicket.findMany({
       where: {
         smartContractId: contract?.id,
@@ -90,12 +86,9 @@ async function generateMemoryTicket(
       throw new ApiError(httpStatus.BAD_REQUEST, "Out of limit");
     }
 
-    console.log(memoryTicket);
-
-    console.log(memoryTicket.length);
-    const imageString = await imageWithLabelConverter(displayName);
+    // const imageString = await imageWithLabelConverter(displayName);
     const ipfsConverted = await loadIpfs(
-      new Buffer(imageString.split(",")[1], "base64"),
+      new Buffer(image.split(",")[1], "base64"),
     );
 
     await constructMetadata(
@@ -111,10 +104,11 @@ async function generateMemoryTicket(
       user.bcAddress,
       memoryTicket.length,
       user.id,
+      displayName,
     );
-
+    console.log(res);
     if (res) {
-      return imageString;
+      return image;
     }
     throw new ApiError(httpStatus.BAD_REQUEST, "İşlem Başarısız");
   } catch (error) {
@@ -150,9 +144,6 @@ const constructMetadata = async (
   nftIds.push(index);
   metadataCIDs.push(result.path);
 
-  console.log(metadataCIDs);
-  console.log(nftIds);
-
   await linkMetaData(nftIds, metadataCIDs, contractAddress);
 };
 
@@ -161,8 +152,6 @@ const linkMetaData = async (
   CIDs: any[],
   nftContractAddress: string,
 ) => {
-  console.log("add cid to nfts");
-
   if (nftIds.length !== CIDs.length) {
     return;
   }
@@ -179,12 +168,11 @@ const linkMetaData = async (
     });
 
     await _res.wait();
-    console.log("_res");
+
     // TEST
     // these part will be deleted later
     const _mint0 = await nftContract.mint({ from: PublicKey, value: 1 });
     await _mint0.wait();
-    console.log("_mint");
   } catch (error: any) {
     console.log("====================================");
     console.log(error.message);
@@ -198,9 +186,9 @@ async function transferNFT(
   toAdress: string,
   tokenId: number,
   userId: string,
+  displayName: string,
 ): Promise<boolean> {
   try {
-    console.log(tokenId);
     const customHttpProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     const wallet = new ethers.Wallet(
       PRIVATE_KEY_FOR_WALLET,
@@ -222,14 +210,13 @@ async function transferNFT(
       },
     );
 
-    console.log(tx);
-
     if (tx) {
       const newSmartContract = await prisma.memoryTicket.create({
         data: {
           tokenId: tokenId,
           userId: userId,
           smartContractId: contract.id,
+          displayName: displayName,
         },
       });
       return true;
@@ -271,7 +258,6 @@ async function createMemoryContract(
   tag: string,
 ): Promise<any> {
   try {
-    console.log("create nft");
     const contractNameToDeploy = "SolyTicket - " + contractName;
     const customHttpProvider = new ethers.providers.JsonRpcProvider(rpcUrl);
     const wallet = new ethers.Wallet(
@@ -292,7 +278,7 @@ async function createMemoryContract(
       tag,
       { from: PublicKey },
     );
-    console.log(_res);
+
     const _details = await _res.wait();
     let _contractAddress;
     _details.events.filter((event: { event: string; args: [any, any] }) => {
@@ -309,7 +295,7 @@ async function createMemoryContract(
         contractCapacity: numberOfTickets,
       },
     });
-    console.log(newSmartContract);
+
     return _contractAddress;
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
@@ -326,7 +312,6 @@ async function getUserInfoForMemory(
     if (!user) {
       throw new ApiError(httpStatus.BAD_REQUEST, "User did not found");
     }
-    console.log(user.id);
 
     const contract = await prisma.smartContract.findFirst({
       where: { activityName: activityName },
@@ -335,7 +320,6 @@ async function getUserInfoForMemory(
     if (!contract) {
       throw new ApiError(httpStatus.BAD_REQUEST, "Contract did not found");
     }
-    console.log(contract.id);
 
     const existingUser = await prisma.memoryTicket.findFirst({
       where: {
@@ -343,21 +327,15 @@ async function getUserInfoForMemory(
         userId: userId,
       },
     });
-    console.log(existingUser);
+
     if (!existingUser) {
       return { isExist: false };
     }
 
-    const memoryTicket = await prisma.memoryTicket.findMany({
-      where: {
-        smartContractId: contract?.id,
-        userId: userId,
-      },
-    });
-
     let obj = {
       bcAddress: user.bcAddress,
       mnemonicIsShown: user.mnemonicIsShown,
+      displayName: existingUser.displayName,
     };
 
     return obj;
@@ -389,7 +367,6 @@ async function getNFTmetaData(
       userId: userId,
     },
   });
-  console.log(existingUser);
   if (!existingUser) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
@@ -410,6 +387,7 @@ async function getNFTmetaData(
 
   try {
     const response = await axios.request(options);
+    console.log(response);
     let nftImage;
     if (response.data) {
       const arr = response.data?.ownedNfts;

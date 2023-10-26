@@ -33,6 +33,7 @@ const createUser = async (
   birthday: string,
   type: Role = Role.CUSTOMER,
   nameForNFT?: string,
+  image?: string,
 ): Promise<any> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(
@@ -62,8 +63,9 @@ const createUser = async (
   });
   //todo secrekey
 
-  if (nameForNFT) {
+  if (nameForNFT && image) {
     await memoryTicketService.generateMemoryTicket(
+      image,
       nameForNFT,
       "ttestt3",
       newUser.id,
@@ -72,7 +74,7 @@ const createUser = async (
 
   const accessToken = jwt.sign(
     { userId: newUser.id, role: newUser.type },
-    "secretKey",
+    "solyKey",
     {
       expiresIn: "1d",
     },
@@ -87,6 +89,7 @@ const createGoogleUser = async (
   name: string,
   type: Role = Role.CUSTOMER,
   nameForNFT?: string,
+  image?: string,
 ): Promise<any> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
@@ -108,8 +111,9 @@ const createGoogleUser = async (
     },
   });
 
-  if (nameForNFT) {
+  if (nameForNFT && image) {
     await memoryTicketService.generateMemoryTicket(
+      image,
       nameForNFT,
       "ttestt3",
       newUser.id,
@@ -118,7 +122,7 @@ const createGoogleUser = async (
   //todo secrekey
   const accessToken = jwt.sign(
     { userId: newUser.id, role: newUser.type },
-    "secretKey",
+    "solyKey",
     {
       expiresIn: "1d",
     },
@@ -135,6 +139,7 @@ const createMetamaskUser = async (
   birthday: string,
   type: Role = Role.CUSTOMER,
   nameForNFT?: string,
+  image?: string,
 ): Promise<any> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(httpStatus.BAD_REQUEST, "Email already taken");
@@ -157,17 +162,18 @@ const createMetamaskUser = async (
     },
   });
 
-  if (nameForNFT) {
+  if (nameForNFT && image) {
     await memoryTicketService.generateMemoryTicket(
+      image,
       nameForNFT,
-      "ttestt",
+      "ttestt3",
       newUser.id,
     );
   }
   //todo secrekey
   const accessToken = jwt.sign(
     { userId: newUser.id, role: newUser.type },
-    "secretKey",
+    "solyKey",
     {
       expiresIn: "1d",
     },
@@ -192,7 +198,7 @@ const login = async (email: string, password: string): Promise<string> => {
 
   const accessToken = jwt.sign(
     { userId: user.id, role: user.type },
-    "secretKey",
+    "solyKey",
     {
       expiresIn: "1d",
     },
@@ -283,7 +289,7 @@ const deleteUserById = async (userId: string): Promise<User> => {
   return user;
 };
 
-const getMne = async (userId: string): Promise<string> => {
+const getMne = async (userId: string): Promise<any> => {
   const user = await getUserById(userId);
 
   if (!user) {
@@ -304,7 +310,7 @@ const getMne = async (userId: string): Promise<string> => {
     },
   });
 
-  return user.mnemonic as string;
+  return { mnemonic: user.mnemonic, privateKey: user.privateKey };
 };
 
 export default {

@@ -4,9 +4,10 @@ import memoryTicketService from "../services/memoryTicket.service";
 import jwt, { JwtPayload } from "jsonwebtoken";
 
 const generateMemoryTicket = catchAsync(async (req, res) => {
-  const { displayName, activityName, userId } = req.body;
+  const { image, activityName, userId, displayName } = req.body;
 
   const data = await memoryTicketService.generateMemoryTicket(
+    image,
     displayName,
     activityName,
     userId,
@@ -52,11 +53,12 @@ const getUserInfoForMemory = catchAsync(async (req, res) => {
 
 const getNFTmetaData = catchAsync(async (req, res) => {
   const { userId, activityName } = req.query;
-
+  console.log(userId);
   const data = await memoryTicketService.getNFTmetaData(
     userId as string,
     activityName as string,
   );
+  console.log(data);
   res.send(data);
 });
 
