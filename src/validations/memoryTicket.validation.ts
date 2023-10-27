@@ -11,6 +11,7 @@ const createMemoryContract = {
 const createMemoryTicket = {
   body: Joi.object().keys({
     userId: Joi.string().required(),
+    image: Joi.string().required(),
     displayName: Joi.string().required(),
     activityName: Joi.string().required(),
   }),

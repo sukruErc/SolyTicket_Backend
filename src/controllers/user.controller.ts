@@ -3,7 +3,8 @@ import { ApiError, catchAsync, pick } from "../utils";
 import { userService } from "../services";
 
 const createUser = catchAsync(async (req, res) => {
-  const { email, password, name, phone, birthday, role, nameForNFT } = req.body;
+  const { email, password, name, phone, birthday, role, nameForNFT, image } =
+    req.body;
   const data = await userService.createUser(
     email,
     password,
@@ -12,12 +13,13 @@ const createUser = catchAsync(async (req, res) => {
     birthday,
     role,
     nameForNFT,
+    image,
   );
   res.status(httpStatus.CREATED).send(data);
 });
 
 const createMetamaskUser = catchAsync(async (req, res) => {
-  const { email, password, wallet, name, birthday, role, nameForNFT } =
+  const { email, password, wallet, name, birthday, role, nameForNFT, image } =
     req.body;
   const data = await userService.createMetamaskUser(
     email,
@@ -27,18 +29,20 @@ const createMetamaskUser = catchAsync(async (req, res) => {
     birthday,
     role,
     nameForNFT,
+    image,
   );
   res.status(httpStatus.CREATED).send(data);
 });
 
 const createGoogleUser = catchAsync(async (req, res) => {
-  const { email, picture, name, role, nameForNFT } = req.body;
+  const { email, picture, name, role, nameForNFT, image } = req.body;
   const data = await userService.createGoogleUser(
     email,
     picture,
     name,
     role,
     nameForNFT,
+    image,
   );
   res.status(httpStatus.CREATED).send(data);
 });
@@ -76,8 +80,8 @@ const deleteUser = catchAsync(async (req, res) => {
 
 const getMne = catchAsync(async (req, res) => {
   const { userId } = req.query;
-  const mnemonic = await userService.getMne(userId as string);
-  res.send(mnemonic);
+  const response = await userService.getMne(userId as string);
+  res.send(response);
 });
 
 export default {

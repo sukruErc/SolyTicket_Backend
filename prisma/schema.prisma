@@ -103,6 +103,7 @@ model MemoryTicket {
   owner           User          @relation(fields: [userId], references: [id])
   tokenId         Int
   userId          String
+  displayName     String        @default("")
   contract        SmartContract @relation(fields: [smartContractId], references: [id])
   smartContractId String
 }
