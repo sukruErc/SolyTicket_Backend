@@ -67,7 +67,7 @@ const createUser = async (
     await memoryTicketService.generateMemoryTicket(
       image,
       nameForNFT,
-      "ttestt3",
+      // "ttestt3",
       newUser.id,
     );
   }
@@ -115,7 +115,7 @@ const createGoogleUser = async (
     await memoryTicketService.generateMemoryTicket(
       image,
       nameForNFT,
-      "ttestt3",
+      // "ttestt3",
       newUser.id,
     );
   }
@@ -166,7 +166,7 @@ const createMetamaskUser = async (
     await memoryTicketService.generateMemoryTicket(
       image,
       nameForNFT,
-      "ttestt3",
+      // "ttestt3",
       newUser.id,
     );
   }
