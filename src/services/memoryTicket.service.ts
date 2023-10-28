@@ -233,7 +233,9 @@ async function transferNFT(
 }
 
 async function imageWithLabelConverter(displayName: string): Promise<string> {
-  const image = await loadImage("C:/Users/T470/Documents/29_memory.png");
+  const image = await loadImage(
+    "C:/Users/Administrator/Documents/29_memory.png",
+  );
 
   const canvas = createCanvas(image.width, image.height);
   const ctx = canvas.getContext("2d");
