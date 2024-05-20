@@ -1,12 +1,12 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
-
+// npx prisma migrate dev --name addCollectionFeature
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -31,20 +31,23 @@ model User {
   PendingEvent    PendingEvent[]
   Tickets         Tickets[]
   MemoryTicket    MemoryTicket[]
+  ViewedEvent     ViewedEvent[] // Relation to ViewedEvent
+  LoginAttempt    LoginAttempt[] // Relation to LoginAttempt
+  Collection      Collection[] // Relation to Collection
 
   @@unique([email, bcAddress])
 }
 
 model Event {
-  id                String       @id @default(uuid())
-  creatorId         User         @relation(fields: [userId], references: [id])
+  id                String            @id @default(uuid())
+  creatorId         User              @relation(fields: [userId], references: [id])
   date              DateTime
   desc              String?
   eventName         String
-  eventCategory     Category     @relation(fields: [categoryId], references: [id])
-  eventCategoryType CategoryType @relation(fields: [categoryTypeId], references: [id])
+  eventCategory     Category          @relation(fields: [categoryId], references: [id])
+  eventCategoryType CategoryType      @relation(fields: [categoryTypeId], references: [id])
   image             String
-  location          Location     @relation(fields: [locationId], references: [id])
+  location          Location          @relation(fields: [locationId], references: [id])
   eventAddress      String
   priceLabel        String
   seatNum           Int
@@ -53,6 +56,10 @@ model Event {
   categoryId        String
   categoryTypeId    String
   locationId        String
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+  ViewedEvent       ViewedEvent[] // Relation to ViewedEvent
+  CollectionEvent   CollectionEvent[] // Relation to CollectionEvent
 }
 
 model PendingEvent {
@@ -84,8 +91,6 @@ model Tickets {
   id             String   @id @default(uuid())
   creatorId      User     @relation(fields: [userId], references: [id])
   date           DateTime
-  // eventCategory String
-  // eventType     String
   ticketTypeName String
   price          String
 
@@ -93,7 +98,6 @@ model Tickets {
   eventCategory     Category     @relation(fields: [categoryId], references: [id])
   eventName         String
   userId            String
-  // ticketsWithCategoryAndPrice TicketCategory[] @relation("ticketCategory")
   categoryId        String
   categoryTypeId    String
 }
@@ -142,6 +146,54 @@ model Location {
   PendingEvent PendingEvent[]
 }
 
+model ViewedEvent {
+  id       String   @id @default(uuid())
+  user     User     @relation(fields: [userId], references: [id])
+  event    Event    @relation(fields: [eventId], references: [id])
+  viewedAt DateTime @default(now())
+  userId   String
+  eventId  String
+
+  @@unique([userId, eventId])
+}
+
+model Log {
+  id        String   @id @default(uuid())
+  message   String
+  level     LogLevel
+  timestamp DateTime @default(now())
+}
+
+model LoginAttempt {
+  id        String      @id @default(uuid())
+  user      User        @relation(fields: [userId], references: [id])
+  userId    String
+  timestamp DateTime    @default(now())
+  ipAddress String
+  status    LoginStatus
+}
+
+model Collection {
+  id             String            @id @default(uuid())
+  collectionName String
+  user           User              @relation(fields: [userId], references: [id])
+  userId         String
+  events         CollectionEvent[]
+  completed      Boolean           @default(false)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+model CollectionEvent {
+  id           String     @id @default(uuid())
+  collection   Collection @relation(fields: [collectionId], references: [id])
+  collectionId String
+  event        Event      @relation(fields: [eventId], references: [id])
+  eventId      String
+  attended     Boolean    @default(false)
+  createdAt    DateTime   @default(now())
+}
+
 enum Role {
   CUSTOMER
   ORGANIZER
@@ -152,4 +204,15 @@ enum SubscribeType {
   NONE
   PERSONAL
   FAMILY
+}
+
+enum LogLevel {
+  INFO
+  WARNING
+  ERROR
+}
+
+enum LoginStatus {
+  SUCCESS
+  FAILURE
 }

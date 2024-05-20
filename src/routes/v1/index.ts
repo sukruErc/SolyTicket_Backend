@@ -4,6 +4,7 @@ import pendingEventRoute from "./pendingEvent.route";
 import eventRoute from "./event.route";
 import filterTypeRoute from "./filterType.route";
 import memoryTicketRoute from "./memoryTicket.route";
+import homePageRoute from "./homepage.route";
 
 const router = express.Router();
 
@@ -32,6 +33,10 @@ const routes: Routes[] = [
   {
     path: "/memory-ticket",
     route: memoryTicketRoute,
+  },
+  {
+    path: "/homepage",
+    route: homePageRoute,
   },
 ];
 

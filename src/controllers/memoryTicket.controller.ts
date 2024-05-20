@@ -9,7 +9,7 @@ const generateMemoryTicket = catchAsync(async (req, res) => {
   const data = await memoryTicketService.generateMemoryTicket(
     image,
     displayName,
-    // activityName,
+    activityName,
     userId,
   );
   if (!data) {
