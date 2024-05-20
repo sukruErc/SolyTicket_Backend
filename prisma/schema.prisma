@@ -60,6 +60,7 @@ model Event {
   updatedAt         DateTime          @updatedAt
   ViewedEvent       ViewedEvent[] // Relation to ViewedEvent
   CollectionEvent   CollectionEvent[] // Relation to CollectionEvent
+  AdEvent           AdEvent[]
 }
 
 model PendingEvent {
@@ -192,6 +193,14 @@ model CollectionEvent {
   eventId      String
   attended     Boolean    @default(false)
   createdAt    DateTime   @default(now())
+}
+
+model AdEvent {
+  id        String   @id @default(uuid())
+  startDate DateTime
+  endDate   DateTime
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   String
 }
 
 enum Role {
