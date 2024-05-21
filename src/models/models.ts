@@ -8,3 +8,10 @@ interface TicketPriceEntity {
   price: number;
   count: number;
 }
+
+export interface ApiResponse<T> {
+  success: boolean;
+  date: Date;
+  message?: string;
+  data?: T;
+}

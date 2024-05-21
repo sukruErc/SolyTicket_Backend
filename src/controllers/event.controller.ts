@@ -4,7 +4,7 @@ import eventService from "../services/event.service";
 import { Request, Response } from "express";
 
 const getEventById = catchAsync(async (req, res) => {
-  const data = await eventService.getEventById(req.params.eventId);
+  const data = await eventService.getEventById(req.query.eventId as string);
   if (!data) {
     throw new ApiError(httpStatus.NOT_FOUND, "events could not found");
   }

@@ -18,6 +18,10 @@ router
   .post(validate(userValidation.createUser), userController.createUser);
 
 router
+  .route("/verify")
+  .post(validate(userValidation.verify), userController.verify);
+
+router
   .route("/metamask-signup")
   .post(
     validate(userValidation.createMetamaskUser),

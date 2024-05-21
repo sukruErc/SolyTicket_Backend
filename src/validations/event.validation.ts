@@ -2,7 +2,7 @@ import { query } from "express";
 import Joi from "joi";
 
 const getEventById = {
-  params: Joi.object().keys({
+  query: Joi.object().keys({
     eventId: Joi.string().required(),
   }),
 };

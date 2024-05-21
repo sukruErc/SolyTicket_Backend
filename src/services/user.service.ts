@@ -6,6 +6,8 @@ import blockchainService from "./blockchain.service";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import memoryTicketService from "./memoryTicket.service";
+import { sendVerificationCode, verifyCode } from "./verification.service";
+import { ApiResponse } from "../models/models";
 
 const USER_KEYS = [
   "id",
@@ -32,9 +34,8 @@ const createUser = async (
   phone: string,
   birthday: string,
   type: Role = Role.CUSTOMER,
-  nameForNFT?: string,
   image?: string,
-): Promise<any> => {
+): Promise<ApiResponse<any>> => {
   if (await getUserByEmail(email)) {
     throw new ApiError(
       httpStatus.BAD_REQUEST,
@@ -63,24 +64,42 @@ const createUser = async (
   });
   //todo secrekey
 
-  if (nameForNFT && image) {
-    await memoryTicketService.generateMemoryTicket(
-      image,
-      nameForNFT,
-      "ttestt3",
-      newUser.id,
-    );
+  await sendVerificationCode(newUser.id, email);
+
+  return { success: true, date: new Date(), message: "Verification code sent" };
+};
+
+const verify = async (
+  code: string,
+  userId: string,
+): Promise<ApiResponse<any>> => {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı Bulunamadı");
   }
 
+  const isValid = await verifyCode(userId, code);
+
+  if (!isValid) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired verification code",
+    );
+  }
   const accessToken = jwt.sign(
-    { userId: newUser.id, role: newUser.type },
+    { userId: user.id, role: user.type },
     "solyKey",
     {
       expiresIn: "1d",
     },
   );
 
-  return { accessToken, userId: newUser.id };
+  return {
+    success: true,
+    date: new Date(),
+    message: "Verification successful",
+    data: accessToken,
+  };
 };
 
 const createGoogleUser = async (
@@ -324,4 +343,5 @@ export default {
   updateUserById,
   deleteUserById,
   getMne,
+  verify,
 };

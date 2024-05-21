@@ -11,29 +11,30 @@ datasource db {
 }
 
 model User {
-  id              String         @id @default(uuid())
-  name            String
-  email           String         @unique
-  type            Role           @default(CUSTOMER)
-  subscribeType   SubscribeType  @default(NONE)
-  status          Boolean
-  mnemonicIsShown Boolean        @default(false)
-  bcAddress       String
-  mnemonic        String?
-  privateKey      String?
-  password        String
-  image           String?
-  phone           String?
-  birthday        DateTime?
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  Event           Event[]
-  PendingEvent    PendingEvent[]
-  Tickets         Tickets[]
-  MemoryTicket    MemoryTicket[]
-  ViewedEvent     ViewedEvent[] // Relation to ViewedEvent
-  LoginAttempt    LoginAttempt[] // Relation to LoginAttempt
-  Collection      Collection[] // Relation to Collection
+  id               String             @id @default(uuid())
+  name             String
+  email            String             @unique
+  type             Role               @default(CUSTOMER)
+  subscribeType    SubscribeType      @default(NONE)
+  status           Boolean
+  mnemonicIsShown  Boolean            @default(false)
+  bcAddress        String
+  mnemonic         String?
+  privateKey       String?
+  password         String
+  image            String?
+  phone            String?
+  birthday         DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  Event            Event[]
+  PendingEvent     PendingEvent[]
+  Tickets          Tickets[]
+  MemoryTicket     MemoryTicket[]
+  ViewedEvent      ViewedEvent[] // Relation to ViewedEvent
+  LoginAttempt     LoginAttempt[] // Relation to LoginAttempt
+  Collection       Collection[] // Relation to Collection
+  VerificationCode VerificationCode[]
 
   @@unique([email, bcAddress])
 }
@@ -201,6 +202,16 @@ model AdEvent {
   endDate   DateTime
   event     Event    @relation(fields: [eventId], references: [id])
   eventId   String
+}
+
+model VerificationCode {
+  id        String   @id @default(cuid())
+  userId    String
+  code      String
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
 
 enum Role {

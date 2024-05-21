@@ -12,7 +12,6 @@ const createUser = catchAsync(async (req, res) => {
     phone,
     birthday,
     role,
-    nameForNFT,
     image,
   );
   res.status(httpStatus.CREATED).send(data);
@@ -78,6 +77,11 @@ const deleteUser = catchAsync(async (req, res) => {
   res.status(httpStatus.NO_CONTENT).send();
 });
 
+const verify = catchAsync(async (req, res) => {
+  const response = await userService.verify(req.body.code, req.body.userId);
+  res.send(response);
+});
+
 const getMne = catchAsync(async (req, res) => {
   const { userId } = req.query;
   const response = await userService.getMne(userId as string);
@@ -94,4 +98,5 @@ export default {
   updateUser,
   deleteUser,
   getMne,
+  verify,
 };

@@ -7,7 +7,7 @@ const router = express.Router();
 
 router
   .route("/get-event-by-id")
-  .post(validate(eventValidation.getEventById), eventController.getEventById);
+  .get(validate(eventValidation.getEventById), eventController.getEventById);
 
 router
   .route("/get-event-by-category")

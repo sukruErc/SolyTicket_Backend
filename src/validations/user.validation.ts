@@ -9,7 +9,6 @@ const createUser = {
     role: Joi.string().required().valid(Role.CUSTOMER, Role.ORGANIZER),
     phone: Joi.string().required(),
     birthday: Joi.string().required(),
-    nameForNFT: Joi.string(),
     image: Joi.string(),
   }),
 };
@@ -85,6 +84,13 @@ const deleteUser = {
   }),
 };
 
+const verify = {
+  body: Joi.object().keys({
+    code: Joi.string().required(),
+    userId: Joi.string().required(),
+  }),
+};
+
 export default {
   createUser,
   createMetamaskUser,
@@ -95,4 +101,5 @@ export default {
   updateUser,
   deleteUser,
   getMne,
+  verify,
 };

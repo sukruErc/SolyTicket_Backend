@@ -2,6 +2,7 @@ import httpStatus from "http-status";
 import prisma from "../dbClient";
 import ApiError from "../utils/ApiError";
 import { Event } from "@prisma/client";
+import { ApiResponse } from "../models/models";
 
 interface FilterEventsParams {
   page: number;
@@ -51,15 +52,26 @@ const createEventFromPendingApprove = async (
 
 const getEventById = async <Key extends keyof Event>(
   eventId: string,
-): Promise<Pick<Event, Key> | null> => {
+): Promise<ApiResponse<Pick<Event, Key> | null>> => {
   try {
     const event = await prisma.event.findUnique({
       where: {
         id: eventId,
       },
+      include: {
+        location: true,
+        eventCategory: true,
+        eventCategoryType: true,
+        creatorId: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
     });
 
-    return event;
+    return { success: true, date: new Date(), data: event };
   } catch (error) {
     console.log(error);
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
@@ -127,7 +139,7 @@ const getEventsByFilter = async (
   categoryTypeId: string,
   sortBy = "date",
   sortOrder = "asc",
-): Promise<Event[]> => {
+): Promise<ApiResponse<Event[]>> => {
   try {
     const filters: any = {};
     if (locationId) {
@@ -154,11 +166,20 @@ const getEventsByFilter = async (
     const events = await prisma.event.findMany({
       where: filters,
       orderBy: sortOptions,
+      include: {
+        location: true,
+        eventCategory: true,
+        eventCategoryType: true,
+      },
       skip: (page - 1) * pageSize,
       take: pageSize,
     });
 
-    return events;
+    return {
+      success: true,
+      date: new Date(),
+      data: events,
+    };
   } catch (error) {
     console.error("Error searching events:", error);
     throw error;
