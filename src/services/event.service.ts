@@ -3,6 +3,17 @@ import prisma from "../dbClient";
 import ApiError from "../utils/ApiError";
 import { Event } from "@prisma/client";
 
+interface FilterEventsParams {
+  page: number;
+  pageSize: number;
+  startDate: string;
+  locationId?: string;
+  endDate?: string;
+  categoryTypeId?: string;
+  sortBy?: "date" | "eventName";
+  sortOrder?: "asc" | "desc";
+}
+
 const createEventFromPendingApprove = async (
   pendingEventId: string,
 ): Promise<boolean> => {
@@ -38,7 +49,9 @@ const createEventFromPendingApprove = async (
   }
 };
 
-const getEventById = async<Key extends keyof Event>(eventId: string): Promise<Pick<Event, Key> | null> => {
+const getEventById = async <Key extends keyof Event>(
+  eventId: string,
+): Promise<Pick<Event, Key> | null> => {
   try {
     const event = await prisma.event.findUnique({
       where: {
@@ -47,14 +60,15 @@ const getEventById = async<Key extends keyof Event>(eventId: string): Promise<Pi
     });
 
     return event;
-
   } catch (error) {
     console.log(error);
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
-}
+};
 
-const getEventByCategory = async<Key extends keyof Event>(categoryId: string): Promise<Event[]> => {
+const getEventByCategory = async <Key extends keyof Event>(
+  categoryId: string,
+): Promise<Event[]> => {
   try {
     const event = await prisma.event.findMany({
       where: {
@@ -63,14 +77,15 @@ const getEventByCategory = async<Key extends keyof Event>(categoryId: string): P
     });
 
     return event;
-
   } catch (error) {
     console.log(error);
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
-}
+};
 
-const getEventByCategoryType = async<Key extends keyof Event>(categoryTypeId: string): Promise<Event[]> => {
+const getEventByCategoryType = async <Key extends keyof Event>(
+  categoryTypeId: string,
+): Promise<Event[]> => {
   try {
     const event = await prisma.event.findMany({
       where: {
@@ -79,14 +94,15 @@ const getEventByCategoryType = async<Key extends keyof Event>(categoryTypeId: st
     });
 
     return event;
-
   } catch (error) {
     console.log(error);
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
-}
+};
 
-const getEventByNameSearch = async<Key extends keyof Event>(eventName: string): Promise<Event[]> => {
+const getEventByNameSearch = async <Key extends keyof Event>(
+  eventName: string,
+): Promise<Event[]> => {
   try {
     const events = await prisma.event.findMany({
       where: {
@@ -98,13 +114,56 @@ const getEventByNameSearch = async<Key extends keyof Event>(eventName: string): 
 
     return events;
   } catch (error) {
-    console.error('Error searching events:', error);
+    console.error("Error searching events:", error);
     throw error;
   }
+};
 
-}
+const getEventsByFilter = async (
+  page: number,
+  pageSize: number,
+  locationId: string,
+  endDate: string,
+  categoryTypeId: string,
+  sortBy = "date",
+  sortOrder = "asc",
+): Promise<Event[]> => {
+  try {
+    const filters: any = {};
+    if (locationId) {
+      filters.locationId = locationId;
+    }
 
+    filters.date = { gte: new Date() };
 
+    if (endDate) {
+      if (!filters.date) {
+        filters.date = {};
+      }
+      filters.date.lte = new Date(endDate);
+    }
+
+    if (categoryTypeId) {
+      filters.categoryTypeId = categoryTypeId;
+    }
+
+    const sortOptions: Record<string, any> = {};
+    if (sortBy) {
+      sortOptions[sortBy] = sortOrder;
+    }
+    const events = await prisma.event.findMany({
+      where: filters,
+      orderBy: sortOptions,
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    });
+
+    return events;
+  } catch (error) {
+    console.error("Error searching events:", error);
+    throw error;
+  }
+};
 
 async function getPendingEventById(id: string) {
   return prisma.pendingEvent.findUnique({
@@ -119,5 +178,6 @@ export default {
   getEventById,
   getEventByCategory,
   getEventByCategoryType,
-  getEventByNameSearch
+  getEventByNameSearch,
+  getEventsByFilter,
 };
