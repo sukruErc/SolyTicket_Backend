@@ -332,6 +332,72 @@ const getMne = async (userId: string): Promise<any> => {
   return { mnemonic: user.mnemonic, privateKey: user.privateKey };
 };
 
+const requestPasswordReset = async (
+  code: string,
+  userId: string,
+): Promise<ApiResponse<any>> => {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı Bulunamadı");
+  }
+
+  const isValid = await verifyCode(userId, code);
+
+  if (!isValid) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired verification code",
+    );
+  }
+  const accessToken = jwt.sign(
+    { userId: user.id, role: user.type },
+    "solyKey",
+    {
+      expiresIn: "1d",
+    },
+  );
+
+  return {
+    success: true,
+    date: new Date(),
+    message: "Verification successful",
+    data: accessToken,
+  };
+};
+
+const resetPassword = async (
+  code: string,
+  userId: string,
+): Promise<ApiResponse<any>> => {
+  const user = await getUserById(userId);
+  if (!user) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı Bulunamadı");
+  }
+
+  const isValid = await verifyCode(userId, code);
+
+  if (!isValid) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Invalid or expired verification code",
+    );
+  }
+  const accessToken = jwt.sign(
+    { userId: user.id, role: user.type },
+    "solyKey",
+    {
+      expiresIn: "1d",
+    },
+  );
+
+  return {
+    success: true,
+    date: new Date(),
+    message: "Verification successful",
+    data: accessToken,
+  };
+};
+
 export default {
   createUser,
   createMetamaskUser,
@@ -344,4 +410,6 @@ export default {
   deleteUserById,
   getMne,
   verify,
+  resetPassword,
+  requestPasswordReset,
 };

@@ -22,6 +22,16 @@ router
   .post(validate(userValidation.verify), userController.verify);
 
 router
+  .route("/request-password-reset")
+  .post(
+    validate(userValidation.requestPasswordReset),
+    userController.requestPasswordReset,
+  );
+
+router
+  .route("/reset-password")
+  .post(validate(userValidation.resetPassword), userController.resetPassword);
+router
   .route("/metamask-signup")
   .post(
     validate(userValidation.createMetamaskUser),

@@ -91,6 +91,19 @@ const verify = {
   }),
 };
 
+const requestPasswordReset = {
+  body: Joi.object().keys({
+    email: Joi.string().required(),
+  }),
+};
+
+const resetPassword = {
+  body: Joi.object().keys({
+    code: Joi.string().required(),
+    userId: Joi.string().required(),
+  }),
+};
+
 export default {
   createUser,
   createMetamaskUser,
@@ -102,4 +115,6 @@ export default {
   deleteUser,
   getMne,
   verify,
+  resetPassword,
+  requestPasswordReset,
 };

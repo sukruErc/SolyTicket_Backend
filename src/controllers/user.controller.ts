@@ -82,6 +82,22 @@ const verify = catchAsync(async (req, res) => {
   res.send(response);
 });
 
+const requestPasswordReset = catchAsync(async (req, res) => {
+  const response = await userService.requestPasswordReset(
+    req.body.code,
+    req.body.userId,
+  );
+  res.send(response);
+});
+
+const resetPassword = catchAsync(async (req, res) => {
+  const response = await userService.resetPassword(
+    req.body.code,
+    req.body.userId,
+  );
+  res.send(response);
+});
+
 const getMne = catchAsync(async (req, res) => {
   const { userId } = req.query;
   const response = await userService.getMne(userId as string);
@@ -99,4 +115,6 @@ export default {
   deleteUser,
   getMne,
   verify,
+  requestPasswordReset,
+  resetPassword,
 };
