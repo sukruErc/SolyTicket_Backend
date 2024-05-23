@@ -99,8 +99,9 @@ const requestPasswordReset = {
 
 const resetPassword = {
   body: Joi.object().keys({
-    code: Joi.string().required(),
-    userId: Joi.string().required(),
+    email: Joi.string().required(),
+    token: Joi.string().required(),
+    newPassword: Joi.string().required(),
   }),
 };
 

@@ -2,6 +2,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import nodemailer from "nodemailer";
+import crypto from "crypto";
 
 const prisma = new PrismaClient();
 
@@ -64,4 +65,29 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     text,
   });
   console.log("Message sent: %s", info.messageId);
+};
+
+export const generateResetToken = (): string => {
+  return crypto.randomBytes(32).toString("hex");
+};
+
+export const sendResetEmail = async (email: string, token: string) => {
+  const transporter = nodemailer.createTransport({
+    host: "mail.artitel.com.tr",
+    port: 587,
+    secure: false,
+    auth: {
+      user: "sukrucan.ercoban@artitel.com.tr",
+      pass: "sukru2023can.",
+    },
+  });
+
+  const mailOptions = {
+    from: "sukrucan.ercoban@artitel.com.tr",
+    to: email,
+    subject: "Password Reset",
+    text: `You requested a password reset. Use this token to reset your password: ${token}`,
+  };
+
+  await transporter.sendMail(mailOptions);
 };

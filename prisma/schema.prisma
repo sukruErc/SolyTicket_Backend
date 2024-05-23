@@ -18,7 +18,6 @@ model User {
   subscribeType      SubscribeType        @default(NONE)
   status             Boolean
   mnemonicIsShown    Boolean              @default(false)
-  //bura ayrı tabloya geçecek
   bcAddress          String
   mnemonic           String?
   privateKey         String?

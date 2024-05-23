@@ -6,7 +6,12 @@ import blockchainService from "./blockchain.service";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import memoryTicketService from "./memoryTicket.service";
-import { sendVerificationCode, verifyCode } from "./verification.service";
+import {
+  generateResetToken,
+  sendResetEmail,
+  sendVerificationCode,
+  verifyCode,
+} from "./verification.service";
 import { ApiResponse } from "../models/models";
 
 const USER_KEYS = [
@@ -333,55 +338,69 @@ const getMne = async (userId: string): Promise<any> => {
 };
 
 const requestPasswordReset = async (
-  code: string,
-  userId: string,
+  email: string,
 ): Promise<ApiResponse<any>> => {
-  const user = await getUserById(userId);
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı Bulunamadı");
+    throw new Error("User not found");
   }
 
-  const isValid = await verifyCode(userId, code);
+  const resetToken = generateResetToken();
+  const resetTokenExpires = new Date(Date.now() + 3600000); // 1 hour from now
 
-  if (!isValid) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "Invalid or expired verification code",
-    );
-  }
-  const accessToken = jwt.sign(
-    { userId: user.id, role: user.type },
-    "solyKey",
-    {
-      expiresIn: "1d",
+  await prisma.passwordResetToken.create({
+    data: {
+      token: resetToken,
+      expiresAt: resetTokenExpires,
+      userId: user.id,
     },
-  );
+  });
 
+  await sendResetEmail(email, resetToken);
   return {
     success: true,
     date: new Date(),
     message: "Verification successful",
-    data: accessToken,
+    data: null,
   };
 };
 
 const resetPassword = async (
-  code: string,
-  userId: string,
+  email: string,
+  token: string,
+  newPassword: string,
 ): Promise<ApiResponse<any>> => {
-  const user = await getUserById(userId);
+  const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı Bulunamadı");
+    throw new Error("User not found");
+  }
+  const resetTokenRecord = await prisma.passwordResetToken.findFirst({
+    where: {
+      token: token,
+      expiresAt: {
+        gt: new Date(),
+      },
+    },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!resetTokenRecord) {
+    throw new Error("Token is invalid or has expired");
   }
 
-  const isValid = await verifyCode(userId, code);
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
 
-  if (!isValid) {
-    throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "Invalid or expired verification code",
-    );
-  }
+  await prisma.user.update({
+    where: { id: resetTokenRecord.userId },
+    data: { password: hashedPassword },
+  });
+
+  await prisma.passwordResetToken.deleteMany({
+    where: { userId: resetTokenRecord.userId },
+  });
+
   const accessToken = jwt.sign(
     { userId: user.id, role: user.type },
     "solyKey",

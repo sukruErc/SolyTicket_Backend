@@ -83,17 +83,15 @@ const verify = catchAsync(async (req, res) => {
 });
 
 const requestPasswordReset = catchAsync(async (req, res) => {
-  const response = await userService.requestPasswordReset(
-    req.body.code,
-    req.body.userId,
-  );
+  const response = await userService.requestPasswordReset(req.body.email);
   res.send(response);
 });
 
 const resetPassword = catchAsync(async (req, res) => {
   const response = await userService.resetPassword(
-    req.body.code,
-    req.body.userId,
+    req.body.email,
+    req.body.token,
+    req.body.newPassword,
   );
   res.send(response);
 });
