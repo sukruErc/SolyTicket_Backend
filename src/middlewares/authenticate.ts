@@ -15,7 +15,6 @@ const authenticateMiddleware = (
   // Get the token from the request headers
 
   const authorizationHeader = req.headers.authorization;
-
   if (!authorizationHeader) {
     return next(new ApiError(httpStatus.BAD_REQUEST, "Unauthorized1"));
   }
@@ -27,7 +26,7 @@ const authenticateMiddleware = (
 
   try {
     // Verify the token
-    const decodedToken = jwt.verify(token, "secretKey") as { userId: string };
+    const decodedToken = jwt.verify(token, "solyKey") as { userId: string };
     // Attach the user data to the request object
     req.user = decodedToken;
 

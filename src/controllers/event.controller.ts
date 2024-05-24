@@ -58,10 +58,23 @@ const getEventsByFilter = catchAsync(async (req: Request, res: Response) => {
   res.send(data);
 });
 
+const buyEventTicket = catchAsync(async (req: Request, res: Response) => {
+  const { eventId, ticketCategoryId, userId } = req.body;
+
+  const data = await eventService.buyEventTicket(
+    eventId,
+    ticketCategoryId,
+    userId,
+  );
+
+  res.send(data);
+});
+
 export default {
   getEventById,
   getEventByCategory,
   getEventByCategoryType,
   getEventByNameSearch,
   getEventsByFilter,
+  buyEventTicket,
 };

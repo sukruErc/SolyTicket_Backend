@@ -22,8 +22,6 @@ const USER_KEYS = [
   "subscribeType",
   "status",
   "bcAddress",
-  "mnemonic",
-  "privateKey",
   "password",
   "image",
   "phone",
@@ -58,12 +56,21 @@ const createUser = async (
       type,
       status: true,
       bcAddress: wallet ? wallet.address : "",
-      mnemonic: wallet ? wallet.mnemonic?.phrase : "",
-      privateKey: wallet ? wallet.privateKey : "",
+      // mnemonic: wallet ? wallet.mnemonic?.phrase : "",
+      // privateKey: wallet ? wallet.privateKey : "",
       password: hashedPassword,
       image: "String?",
       birthday: birthday,
       phone: phone,
+      // mnemonicIsShown: false,
+    },
+  });
+
+  await prisma.blockchainInfo.create({
+    data: {
+      mnemonic: wallet ? wallet.mnemonic?.phrase : "",
+      privateKey: wallet ? wallet.privateKey : "",
+      userId: newUser.id,
       mnemonicIsShown: false,
     },
   });
@@ -127,10 +134,18 @@ const createGoogleUser = async (
       type,
       status: true,
       bcAddress: wallet ? wallet.address : "",
-      mnemonic: wallet ? wallet.mnemonic?.phrase : "",
-      privateKey: wallet ? wallet.privateKey : "",
+      // mnemonic: wallet ? wallet.mnemonic?.phrase : "",
+      // privateKey: wallet ? wallet.privateKey : "",
       password: "",
       image: picture,
+      // mnemonicIsShown: false,
+    },
+  });
+  await prisma.blockchainInfo.create({
+    data: {
+      mnemonic: wallet ? wallet.mnemonic?.phrase : "",
+      privateKey: wallet ? wallet.privateKey : "",
+      userId: newUser.id,
       mnemonicIsShown: false,
     },
   });
@@ -177,11 +192,20 @@ const createMetamaskUser = async (
       type,
       status: true,
       bcAddress: wallet,
-      mnemonic: "",
-      privateKey: "",
+      // mnemonic: "",
+      // privateKey: "",
       password: hashedPassword,
       image: "String?",
       birthday: birthday,
+      // mnemonicIsShown: true,
+    },
+  });
+
+  await prisma.blockchainInfo.create({
+    data: {
+      mnemonic: "",
+      privateKey: "",
+      userId: newUser.id,
       mnemonicIsShown: true,
     },
   });
@@ -212,13 +236,13 @@ const login = async (email: string, password: string): Promise<string> => {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
-  const isPasswordMatch = await bcrypt.compare(password, user.password);
+  // const isPasswordMatch = await bcrypt.compare(password, user.password);
 
-  if (!isPasswordMatch) {
-    throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password");
-  }
+  // if (!isPasswordMatch) {
+  //   throw new ApiError(httpStatus.UNAUTHORIZED, "Incorrect password");
+  // }
 
-  const wallet = await blockchainService.createMetamaskWallet();
+  // const wallet = await blockchainService.createMetamaskWallet();
 
   const accessToken = jwt.sign(
     { userId: user.id, role: user.type },
@@ -314,8 +338,9 @@ const deleteUserById = async (userId: string): Promise<User> => {
 };
 
 const getMne = async (userId: string): Promise<any> => {
-  const user = await getUserById(userId);
-
+  const user = await prisma.blockchainInfo.findUnique({
+    where: { userId },
+  });
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
@@ -327,7 +352,7 @@ const getMne = async (userId: string): Promise<any> => {
     );
   }
 
-  const updatedUser = await prisma.user.update({
+  const updatedUser = await prisma.blockchainInfo.update({
     where: { id: userId },
     data: {
       mnemonicIsShown: true,

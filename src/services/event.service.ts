@@ -1,8 +1,9 @@
 import httpStatus from "http-status";
 import prisma from "../dbClient";
 import ApiError from "../utils/ApiError";
-import { Event } from "@prisma/client";
+import { Event, TicketCategory } from "@prisma/client";
 import { ApiResponse } from "../models/models";
+import { connect } from "http2";
 
 interface FilterEventsParams {
   page: number;
@@ -17,7 +18,7 @@ interface FilterEventsParams {
 
 const createEventFromPendingApprove = async (
   pendingEventId: string,
-): Promise<boolean> => {
+): Promise<Event> => {
   try {
     const pendingEvent = await getPendingEventById(pendingEventId);
 
@@ -39,15 +40,62 @@ const createEventFromPendingApprove = async (
         priceLabel: pendingEvent.price,
         seatNum: pendingEvent.seatNum,
         time: pendingEvent.time,
+
         // searchTitle: pendingEvent.searchTitle,
       },
     });
+    if (!pendingEvent.ticketPriceEntity) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "ticketPriceEntity not found");
+    }
+    const ticketEntityString = JSON.stringify(pendingEvent.ticketPriceEntity);
+    const ticketCategories = await createTicketCategories(
+      ticketEntityString,
+      newEvent.id,
+    );
 
-    return true;
+    for (const ticketCat of ticketCategories) {
+      for (let i = 0; i < ticketCat.quantity; i++) {
+        await prisma.tickets.create({
+          data: {
+            creatorId: { connect: { id: pendingEvent.userId } },
+            event: { connect: { id: newEvent.id } },
+            eventCategory: { connect: { id: pendingEvent.categoryId } },
+            eventCategoryType: { connect: { id: pendingEvent.categoryTypeId } },
+            ticketCategory: { connect: { id: ticketCat.id } },
+            price: ticketCat.price.toString(),
+            eventName: newEvent.eventName,
+            date: newEvent.date,
+            ticketTypeName: ticketCat.name,
+          },
+        });
+      }
+    }
+
+    return newEvent;
   } catch (error) {
     console.log(error);
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
+};
+
+const createTicketCategories = async (
+  ticketEntity: string,
+  eventId: string,
+): Promise<TicketCategory[]> => {
+  const categories = JSON.parse(ticketEntity);
+  let list = [];
+  for (const category of categories) {
+    const res = await prisma.ticketCategory.create({
+      data: {
+        event: { connect: { id: eventId } },
+        name: category.name,
+        price: parseFloat(category.price),
+        quantity: parseInt(category.quantity),
+      },
+    });
+    list.push(res);
+  }
+  return list;
 };
 
 const getEventById = async <Key extends keyof Event>(
@@ -186,6 +234,102 @@ const getEventsByFilter = async (
   }
 };
 
+const buyEventTicket = async (
+  eventId: string,
+  ticketCategoryId: string,
+  userId: string,
+): Promise<ApiResponse<any>> => {
+  try {
+    const event = await getEventById(eventId);
+    if (!event) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Event not found");
+    }
+
+    if (event.date < new Date()) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Event has already passed");
+    }
+
+    const ticketCategory = await prisma.ticketCategory.findUnique({
+      where: {
+        id: ticketCategoryId,
+      },
+    });
+
+    if (!ticketCategory) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "ticketCategory not found");
+    }
+
+    const availableTickets = await prisma.tickets.count({
+      where: {
+        ticketCategoryId: ticketCategoryId,
+        // userId: "",
+        // sold: false
+      },
+    });
+
+    if (availableTickets === 0) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "All tickets in this category are sold out",
+      );
+    }
+
+    const userBoughtTicket = await prisma.tickets.findFirst({
+      where: {
+        userId: userId,
+        eventId: eventId,
+      },
+    });
+
+    if (userBoughtTicket) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "User has already bought a ticket for this event",
+      );
+    }
+
+    //TODO purchase payment
+
+    const randomTicket = await prisma.tickets.findFirst({
+      where: {
+        ticketCategoryId: ticketCategoryId,
+        // sold: false
+      },
+      // orderBy: {
+      //   // Order randomly
+      //   createdAt: 'asc',
+      // },
+    });
+
+    if (!randomTicket) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "No available ticket found for the given category",
+      );
+    }
+
+    const updatedTicket = await prisma.tickets.update({
+      where: {
+        id: randomTicket.id,
+      },
+      data: {
+        userId: userId,
+      },
+    });
+
+    //TODO SEND NFT USER
+
+    return {
+      success: true,
+      date: new Date(),
+      data: updatedTicket,
+    };
+  } catch (error) {
+    console.error("Error searching events:", error);
+    throw error;
+  }
+};
+
 async function getPendingEventById(id: string) {
   return prisma.pendingEvent.findUnique({
     where: {
@@ -201,4 +345,5 @@ export default {
   getEventByCategoryType,
   getEventByNameSearch,
   getEventsByFilter,
+  buyEventTicket,
 };

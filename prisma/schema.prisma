@@ -17,10 +17,7 @@ model User {
   type               Role                 @default(CUSTOMER)
   subscribeType      SubscribeType        @default(NONE)
   status             Boolean
-  mnemonicIsShown    Boolean              @default(false)
-  bcAddress          String
-  mnemonic           String?
-  privateKey         String?
+  bcAddress          String               @unique
   password           String
   image              String?
   phone              String?
@@ -29,15 +26,26 @@ model User {
   updatedAt          DateTime             @updatedAt
   Event              Event[]
   PendingEvent       PendingEvent[]
-  Tickets            Tickets[]
+  // Tickets            Tickets[]
   MemoryTicket       MemoryTicket[]
   ViewedEvent        ViewedEvent[] // Relation to ViewedEvent
   LoginAttempt       LoginAttempt[] // Relation to LoginAttempt
   Collection         Collection[] // Relation to Collection
   VerificationCode   VerificationCode[]
   PasswordResetToken PasswordResetToken[]
+  blockchainInfo     BlockchainInfo?
+  Tickets            Tickets[]
 
   @@unique([email, bcAddress])
+}
+
+model BlockchainInfo {
+  id              String  @id @default(uuid())
+  privateKey      String?
+  mnemonic        String?
+  mnemonicIsShown Boolean @default(false)
+  userId          String  @unique
+  user            User    @relation(fields: [userId], references: [id])
 }
 
 model Event {
@@ -50,9 +58,9 @@ model Event {
   eventCategoryType CategoryType      @relation(fields: [categoryTypeId], references: [id])
   image             String
   location          Location          @relation(fields: [locationId], references: [id])
-  eventAddress      String
-  priceLabel        String
-  seatNum           Int
+  // eventAddress      String
+  // priceLabel        String
+  // seatNum           Int
   time              String
   userId            String
   categoryId        String
@@ -63,6 +71,8 @@ model Event {
   ViewedEvent       ViewedEvent[] // Relation to ViewedEvent
   CollectionEvent   CollectionEvent[] // Relation to CollectionEvent
   AdEvent           AdEvent[]
+  TicketCategory    TicketCategory[]
+  Tickets           Tickets[]
 }
 
 model PendingEvent {
@@ -76,10 +86,10 @@ model PendingEvent {
   isActive          Boolean      @default(false)
   image             String
   location          Location     @relation(fields: [locationId], references: [id])
-  eventAddress      String
-  price             String
-  searchTitle       String
-  seatNum           Int
+  // eventAddress      String
+  // price             String
+  // searchTitle       String
+  // seatNum           Int
   time              String
   userId            String
   categoryId        String
@@ -91,18 +101,42 @@ model PendingEvent {
 }
 
 model Tickets {
-  id             String   @id @default(uuid())
-  creatorId      User     @relation(fields: [userId], references: [id])
-  date           DateTime
-  ticketTypeName String
-  price          String
+  id               String         @id @default(uuid())
+  owner            User           @relation(fields: [userId], references: [id])
+  // date              DateTime
+  ticketTypeName   String
+  price            Float
+  eventId          String
+  ticketCategoryId String
+  // eventCategoryType CategoryType   @relation(fields: [categoryTypeId], references: [id])
+  // eventCategory     Category       @relation(fields: [categoryId], references: [id])
+  // eventName         String
+  userId           String
+  // categoryId        String
+  // categoryTypeId    String
+  sold             Boolean
+  event            Event          @relation(fields: [eventId], references: [id])
+  ticketCategory   TicketCategory @relation(fields: [ticketCategoryId], references: [id])
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 
-  eventCategoryType CategoryType @relation(fields: [categoryTypeId], references: [id])
-  eventCategory     Category     @relation(fields: [categoryId], references: [id])
-  eventName         String
-  userId            String
-  categoryId        String
-  categoryTypeId    String
+  // @@index([userId])
+  @@index([eventId])
+  @@index([ticketCategoryId])
+}
+
+model TicketCategory {
+  id        String    @id @default(uuid())
+  eventId   String
+  name      String
+  price     Float
+  quantity  Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  event     Event     @relation(fields: [eventId], references: [id])
+  Tickets   Tickets[]
+
+  @@index([eventId])
 }
 
 model MemoryTicket {
@@ -129,7 +163,7 @@ model Category {
   CategoryType CategoryType[]
   Event        Event[]
   PendingEvent PendingEvent[]
-  Tickets      Tickets[]
+  // Tickets      Tickets[]
 }
 
 model CategoryType {
@@ -139,7 +173,7 @@ model CategoryType {
   categoryId   String
   PendingEvent PendingEvent[]
   Event        Event[]
-  Tickets      Tickets[]
+  // Tickets      Tickets[]
 }
 
 model Location {

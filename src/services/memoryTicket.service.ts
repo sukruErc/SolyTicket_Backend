@@ -336,7 +336,7 @@ async function getUserInfoForMemory(
 
     let obj = {
       bcAddress: user.bcAddress,
-      mnemonicIsShown: user.mnemonicIsShown,
+      // mnemonicIsShown: user.mnemonicIsShown,
       displayName: existingUser.displayName,
     };
 

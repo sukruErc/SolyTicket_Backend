@@ -2,10 +2,10 @@ import httpStatus from "http-status";
 import prisma from "../dbClient";
 import ApiError from "../utils/ApiError";
 import eventService from "./event.service";
-import { parse } from 'json5';
+import { parse } from "json5";
 import ticketService from "./ticket.service";
 import { PendingEvent } from "@prisma/client";
-
+import { ApiResponse } from "../models/models";
 
 const createPendingEvent = async (
   date: Date,
@@ -22,7 +22,7 @@ const createPendingEvent = async (
   categoryId: string,
   eventCategoryTypeId: string,
   ticketPriceEntity: Record<string, any>,
-): Promise<boolean> => {
+): Promise<ApiResponse<any>> => {
   try {
     const newPendingEvent = await prisma.pendingEvent.create({
       data: {
@@ -42,13 +42,12 @@ const createPendingEvent = async (
         ticketPriceEntity,
       },
     });
-    return true;
+    return { date: new Date(), success: true, data: newPendingEvent };
   } catch (error) {
     console.log(error);
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
 };
-
 
 const updatePendingEvent = async (
   eventId: string,
@@ -95,7 +94,6 @@ const updatePendingEvent = async (
   }
 };
 
-
 async function getAllPendingEvents(): Promise<PendingEvent[]> {
   try {
     const pendingEvents = await prisma.pendingEvent.findMany({
@@ -111,7 +109,9 @@ async function getAllPendingEvents(): Promise<PendingEvent[]> {
   }
 }
 
-const getPendingEventByCreatorId = async (creatorId: string): Promise<PendingEvent[]> => {
+const getPendingEventByCreatorId = async (
+  creatorId: string,
+): Promise<PendingEvent[]> => {
   try {
     const userId = await prisma.user.findUnique({
       where: { id: creatorId },
@@ -134,7 +134,9 @@ const getPendingEventByCreatorId = async (creatorId: string): Promise<PendingEve
   }
 };
 
-const approvePendingEvent = async (eventId: string): Promise<boolean> => {
+const approvePendingEvent = async (
+  eventId: string,
+): Promise<ApiResponse<any>> => {
   try {
     const event = await prisma.pendingEvent.update({
       where: {
@@ -149,23 +151,9 @@ const approvePendingEvent = async (eventId: string): Promise<boolean> => {
       eventId,
     );
 
-    const ticketPriceEntity = event.ticketPriceEntity as {
-      [s: string]: string | number | boolean | null | undefined;
-    };
+    //todo blockchain - update adresses ticket and event
 
-    const object = {
-      "category": { "price": 10, "count": 10 }
-    }
-    Object.entries(ticketPriceEntity).forEach(async ([category, values]) => {
-      const parsedValues = values as unknown as { price: number, count: number };
-
-      if (parsedValues && parsedValues.price)
-        await ticketService.createEventFromPendingApprove(category, parsedValues.price, parsedValues.count, event.id)
-    });
-
-    //todo
-
-    return true;
+    return { date: new Date(), success: true, data: eventResult };
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }

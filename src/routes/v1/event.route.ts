@@ -2,6 +2,7 @@ import express from "express";
 import validate from "../../middlewares/validate";
 import eventValidation from "../../validations/event.validation";
 import eventController from "../../controllers/event.controller";
+import authenticateMiddleware from "../../middlewares/authenticate";
 
 const router = express.Router();
 
@@ -35,6 +36,14 @@ router
   .get(
     validate(eventValidation.getEventsByFilter),
     eventController.getEventsByFilter,
+  );
+
+router
+  .route("/buy-event-ticket")
+  .post(
+    validate(eventValidation.buyEventTicket),
+    authenticateMiddleware,
+    eventController.buyEventTicket,
   );
 
 export default router;

@@ -37,10 +37,19 @@ const getEventsByFilter = {
   }),
 };
 
+const buyEventTicket = {
+  body: Joi.object().keys({
+    eventId: Joi.string().required(),
+    ticketCategoryId: Joi.string().required(),
+    userId: Joi.string().required(),
+  }),
+};
+
 export default {
   getEventById,
   getEventByCategory,
   getEventByCategoryType,
   getEventByNameSearch,
   getEventsByFilter,
+  buyEventTicket,
 };

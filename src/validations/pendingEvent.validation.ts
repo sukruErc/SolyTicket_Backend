@@ -15,7 +15,7 @@ const createPendingEvent = {
     userId: Joi.string().required(),
     categoryId: Joi.string().required(),
     eventCategoryTypeId: Joi.string().required(),
-    ticketPriceEntity: Joi.object().required(),
+    ticketPriceEntity: Joi.array().required(),
   }),
 };
 
@@ -40,17 +40,15 @@ const updatePendingEvent = {
 
 const getById = {
   creatorId: Joi.string().required(),
-}
+};
 
 const getEventId = {
   eventId: Joi.string().required(),
-}
-
-
+};
 
 export default {
   createPendingEvent,
   updatePendingEvent,
   getById,
-  getEventId
+  getEventId,
 };
