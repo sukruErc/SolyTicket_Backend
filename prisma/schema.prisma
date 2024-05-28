@@ -58,11 +58,9 @@ model Event {
   eventCategoryType CategoryType      @relation(fields: [categoryTypeId], references: [id])
   image             String
   location          Location          @relation(fields: [locationId], references: [id])
-  // eventAddress      String
-  // priceLabel        String
-  // seatNum           Int
   time              String
   userId            String
+  contractAddress   String
   categoryId        String
   categoryTypeId    String
   locationId        String
@@ -73,6 +71,9 @@ model Event {
   AdEvent           AdEvent[]
   TicketCategory    TicketCategory[]
   Tickets           Tickets[]
+
+  @@index([createdAt])
+  @@index([date])
 }
 
 model PendingEvent {
@@ -86,10 +87,6 @@ model PendingEvent {
   isActive          Boolean      @default(false)
   image             String
   location          Location     @relation(fields: [locationId], references: [id])
-  // eventAddress      String
-  // price             String
-  // searchTitle       String
-  // seatNum           Int
   time              String
   userId            String
   categoryId        String
@@ -103,24 +100,26 @@ model PendingEvent {
 model Tickets {
   id               String         @id @default(uuid())
   owner            User           @relation(fields: [userId], references: [id])
-  // date              DateTime
   ticketTypeName   String
   price            Float
   eventId          String
+  tokenId          String
   ticketCategoryId String
+  isUsed           Boolean        @default(false)
   // eventCategoryType CategoryType   @relation(fields: [categoryTypeId], references: [id])
   // eventCategory     Category       @relation(fields: [categoryId], references: [id])
   // eventName         String
   userId           String
   // categoryId        String
   // categoryTypeId    String
-  sold             Boolean
+  sold             Boolean        @default(false)
   event            Event          @relation(fields: [eventId], references: [id])
   ticketCategory   TicketCategory @relation(fields: [ticketCategoryId], references: [id])
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
 
-  // @@index([userId])
+  @@index([userId])
+  @@index([createdAt])
   @@index([eventId])
   @@index([ticketCategoryId])
 }
@@ -137,6 +136,7 @@ model TicketCategory {
   Tickets   Tickets[]
 
   @@index([eventId])
+  @@index([createdAt])
 }
 
 model MemoryTicket {
@@ -219,6 +219,8 @@ model Collection {
   completed      Boolean           @default(false)
   createdAt      DateTime          @default(now())
   updatedAt      DateTime          @updatedAt
+
+  @@index([createdAt])
 }
 
 model CollectionEvent {
@@ -229,6 +231,8 @@ model CollectionEvent {
   eventId      String
   attended     Boolean    @default(false)
   createdAt    DateTime   @default(now())
+
+  @@index([createdAt])
 }
 
 model AdEvent {

@@ -4,6 +4,7 @@ import ApiError from "../utils/ApiError";
 import { Event, TicketCategory } from "@prisma/client";
 import { ApiResponse } from "../models/models";
 import { connect } from "http2";
+import blockchainService from "../services/blockchain.service";
 
 interface FilterEventsParams {
   page: number;
@@ -26,6 +27,15 @@ const createEventFromPendingApprove = async (
       throw new ApiError(httpStatus.BAD_REQUEST, "PendingEvent not found");
     }
 
+    const eventContractAddress = await blockchainService.CreateNewNftContract(
+      "test",
+      10,
+    );
+
+    if (!eventContractAddress) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Error in deploying contract");
+    }
+
     const newEvent = await prisma.event.create({
       data: {
         creatorId: { connect: { id: pendingEvent.userId } },
@@ -36,9 +46,7 @@ const createEventFromPendingApprove = async (
         eventCategoryType: { connect: { id: pendingEvent.categoryTypeId } },
         image: pendingEvent.image,
         location: { connect: { id: pendingEvent.locationId } },
-        eventAddress: pendingEvent.eventAddress,
-        priceLabel: pendingEvent.price,
-        seatNum: pendingEvent.seatNum,
+        contractAddress: eventContractAddress ? eventContractAddress : "",
         time: pendingEvent.time,
 
         // searchTitle: pendingEvent.searchTitle,
@@ -53,23 +61,18 @@ const createEventFromPendingApprove = async (
       newEvent.id,
     );
 
-    for (const ticketCat of ticketCategories) {
-      for (let i = 0; i < ticketCat.quantity; i++) {
-        await prisma.tickets.create({
-          data: {
-            creatorId: { connect: { id: pendingEvent.userId } },
-            event: { connect: { id: newEvent.id } },
-            eventCategory: { connect: { id: pendingEvent.categoryId } },
-            eventCategoryType: { connect: { id: pendingEvent.categoryTypeId } },
-            ticketCategory: { connect: { id: ticketCat.id } },
-            price: ticketCat.price.toString(),
-            eventName: newEvent.eventName,
-            date: newEvent.date,
-            ticketTypeName: ticketCat.name,
-          },
-        });
-      }
-    }
+    // for (const ticketCat of ticketCategories) {
+    //   for (let i = 0; i < ticketCat.quantity; i++) {
+    //     await prisma.tickets.create({
+    //       data: {
+    //         owner: { connect: { id: pendingEvent.userId } },
+    //         event: { connect: { id: newEvent.id } },
+    //         ticketCategory: { connect: { id: ticketCat.id } },
+    //         ticketTypeName: ticketCat.name,
+    //       },
+    //     });
+    //   }
+    // }
 
     return newEvent;
   } catch (error) {

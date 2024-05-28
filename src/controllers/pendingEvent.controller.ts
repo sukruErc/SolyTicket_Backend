@@ -9,10 +9,6 @@ const createPendingEvent = catchAsync(async (req, res) => {
     eventName,
     image,
     locationId,
-    eventAddress,
-    price,
-    searchTitle,
-    seatNum,
     time,
     userId,
     categoryId,
@@ -25,10 +21,6 @@ const createPendingEvent = catchAsync(async (req, res) => {
     eventName,
     image,
     locationId,
-    eventAddress,
-    price,
-    searchTitle,
-    seatNum,
     time,
     userId,
     categoryId,
@@ -38,7 +30,6 @@ const createPendingEvent = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).send({ result });
 });
 
-
 const updatePendingEvent = catchAsync(async (req, res) => {
   const {
     eventId,
@@ -47,10 +38,6 @@ const updatePendingEvent = catchAsync(async (req, res) => {
     eventName,
     image,
     locationId,
-    eventAddress,
-    price,
-    searchTitle,
-    seatNum,
     time,
     categoryId,
     eventCategoryTypeId,
@@ -63,10 +50,6 @@ const updatePendingEvent = catchAsync(async (req, res) => {
     eventName,
     image,
     locationId,
-    eventAddress,
-    price,
-    searchTitle,
-    seatNum,
     time,
     categoryId,
     eventCategoryTypeId,
@@ -84,7 +67,9 @@ const getAllPendingEvents = catchAsync(async (req, res) => {
 });
 
 const getPendingEventByCreatorId = catchAsync(async (req, res) => {
-  const data = await pendingEventService.getPendingEventByCreatorId(req.body.creatorId);
+  const data = await pendingEventService.getPendingEventByCreatorId(
+    req.body.creatorId,
+  );
   if (!data) {
     throw new ApiError(httpStatus.NOT_FOUND, "pending events could not found");
   }
@@ -113,5 +98,5 @@ export default {
   getAllPendingEvents,
   getPendingEventByCreatorId,
   approvePendingEvent,
-  rejectPendingEvent
+  rejectPendingEvent,
 };

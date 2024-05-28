@@ -18,10 +18,7 @@ CREATE TABLE "User" (
     "type" "Role" NOT NULL DEFAULT 'CUSTOMER',
     "subscribeType" "SubscribeType" NOT NULL DEFAULT 'NONE',
     "status" BOOLEAN NOT NULL,
-    "mnemonicIsShown" BOOLEAN NOT NULL DEFAULT false,
     "bcAddress" TEXT NOT NULL,
-    "mnemonic" TEXT,
-    "privateKey" TEXT,
     "password" TEXT NOT NULL,
     "image" TEXT,
     "phone" TEXT,
@@ -33,17 +30,26 @@ CREATE TABLE "User" (
 );
 
 -- CreateTable
+CREATE TABLE "BlockchainInfo" (
+    "id" TEXT NOT NULL,
+    "privateKey" TEXT,
+    "mnemonic" TEXT,
+    "mnemonicIsShown" BOOLEAN NOT NULL DEFAULT false,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "BlockchainInfo_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Event" (
     "id" TEXT NOT NULL,
     "date" TIMESTAMP(3) NOT NULL,
     "desc" TEXT,
     "eventName" TEXT NOT NULL,
     "image" TEXT NOT NULL,
-    "eventAddress" TEXT NOT NULL,
-    "priceLabel" TEXT NOT NULL,
-    "seatNum" INTEGER NOT NULL,
     "time" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "contractAddress" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
     "categoryTypeId" TEXT NOT NULL,
     "locationId" TEXT NOT NULL,
@@ -59,12 +65,9 @@ CREATE TABLE "PendingEvent" (
     "date" TIMESTAMP(3) NOT NULL,
     "desc" TEXT,
     "eventName" TEXT NOT NULL,
+    "tokenId" TEXT NOT NULL,
     "isActive" BOOLEAN NOT NULL DEFAULT false,
     "image" TEXT NOT NULL,
-    "eventAddress" TEXT NOT NULL,
-    "price" TEXT NOT NULL,
-    "searchTitle" TEXT NOT NULL,
-    "seatNum" INTEGER NOT NULL,
     "time" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "categoryId" TEXT NOT NULL,
@@ -78,15 +81,30 @@ CREATE TABLE "PendingEvent" (
 -- CreateTable
 CREATE TABLE "Tickets" (
     "id" TEXT NOT NULL,
-    "date" TIMESTAMP(3) NOT NULL,
     "ticketTypeName" TEXT NOT NULL,
-    "price" TEXT NOT NULL,
-    "eventName" TEXT NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL,
+    "eventId" TEXT NOT NULL,
+    "ticketCategoryId" TEXT NOT NULL,
+    "isUsed" BOOLEAN NOT NULL DEFAULT false,
     "userId" TEXT NOT NULL,
-    "categoryId" TEXT NOT NULL,
-    "categoryTypeId" TEXT NOT NULL,
+    "sold" BOOLEAN NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "Tickets_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "TicketCategory" (
+    "id" TEXT NOT NULL,
+    "eventId" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "price" DOUBLE PRECISION NOT NULL,
+    "quantity" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "TicketCategory_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -189,14 +207,74 @@ CREATE TABLE "CollectionEvent" (
     CONSTRAINT "CollectionEvent_pkey" PRIMARY KEY ("id")
 );
 
+-- CreateTable
+CREATE TABLE "AdEvent" (
+    "id" TEXT NOT NULL,
+    "startDate" TIMESTAMP(3) NOT NULL,
+    "endDate" TIMESTAMP(3) NOT NULL,
+    "eventId" TEXT NOT NULL,
+
+    CONSTRAINT "AdEvent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "VerificationCode" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "code" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "VerificationCode_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "PasswordResetToken" (
+    "id" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "userId" TEXT NOT NULL,
+
+    CONSTRAINT "PasswordResetToken_pkey" PRIMARY KEY ("id")
+);
+
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_key" ON "User"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "User_bcAddress_key" ON "User"("bcAddress");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "User_email_bcAddress_key" ON "User"("email", "bcAddress");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "BlockchainInfo_userId_key" ON "BlockchainInfo"("userId");
+
+-- CreateIndex
+CREATE INDEX "Event_createdAt_idx" ON "Event"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "Event_date_idx" ON "Event"("date");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PendingEvent_eventName_date_key" ON "PendingEvent"("eventName", "date");
+
+-- CreateIndex
+CREATE INDEX "Tickets_userId_idx" ON "Tickets"("userId");
+
+-- CreateIndex
+CREATE INDEX "Tickets_createdAt_idx" ON "Tickets"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "Tickets_eventId_idx" ON "Tickets"("eventId");
+
+-- CreateIndex
+CREATE INDEX "Tickets_ticketCategoryId_idx" ON "Tickets"("ticketCategoryId");
+
+-- CreateIndex
+CREATE INDEX "TicketCategory_eventId_idx" ON "TicketCategory"("eventId");
+
+-- CreateIndex
+CREATE INDEX "TicketCategory_createdAt_idx" ON "TicketCategory"("createdAt");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Category_name_key" ON "Category"("name");
@@ -209,6 +287,21 @@ CREATE UNIQUE INDEX "Location_name_key" ON "Location"("name");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ViewedEvent_userId_eventId_key" ON "ViewedEvent"("userId", "eventId");
+
+-- CreateIndex
+CREATE INDEX "Collection_createdAt_idx" ON "Collection"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "CollectionEvent_createdAt_idx" ON "CollectionEvent"("createdAt");
+
+-- CreateIndex
+CREATE INDEX "VerificationCode_userId_idx" ON "VerificationCode"("userId");
+
+-- CreateIndex
+CREATE INDEX "PasswordResetToken_userId_idx" ON "PasswordResetToken"("userId");
+
+-- AddForeignKey
+ALTER TABLE "BlockchainInfo" ADD CONSTRAINT "BlockchainInfo_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Event" ADD CONSTRAINT "Event_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -238,10 +331,13 @@ ALTER TABLE "PendingEvent" ADD CONSTRAINT "PendingEvent_locationId_fkey" FOREIGN
 ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_categoryTypeId_fkey" FOREIGN KEY ("categoryTypeId") REFERENCES "CategoryType"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_categoryId_fkey" FOREIGN KEY ("categoryId") REFERENCES "Category"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "Tickets" ADD CONSTRAINT "Tickets_ticketCategoryId_fkey" FOREIGN KEY ("ticketCategoryId") REFERENCES "TicketCategory"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "TicketCategory" ADD CONSTRAINT "TicketCategory_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "MemoryTicket" ADD CONSTRAINT "MemoryTicket_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -269,3 +365,12 @@ ALTER TABLE "CollectionEvent" ADD CONSTRAINT "CollectionEvent_collectionId_fkey"
 
 -- AddForeignKey
 ALTER TABLE "CollectionEvent" ADD CONSTRAINT "CollectionEvent_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AdEvent" ADD CONSTRAINT "AdEvent_eventId_fkey" FOREIGN KEY ("eventId") REFERENCES "Event"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "VerificationCode" ADD CONSTRAINT "VerificationCode_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PasswordResetToken" ADD CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
