@@ -46,4 +46,18 @@ router
     eventController.buyEventTicket,
   );
 
+router
+  .route("/add-viewed-event")
+  .post(
+    validate(eventValidation.addViewedEvent),
+    eventController.addViewedEvent,
+  );
+
+router
+  .route("/get-similar-events")
+  .get(
+    validate(eventValidation.getSimilarEvents),
+    eventController.getSimilarEvents,
+  );
+
 export default router;

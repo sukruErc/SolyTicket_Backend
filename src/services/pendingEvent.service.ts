@@ -2,8 +2,6 @@ import httpStatus from "http-status";
 import prisma from "../dbClient";
 import ApiError from "../utils/ApiError";
 import eventService from "./event.service";
-import { parse } from "json5";
-import ticketService from "./ticket.service";
 import { PendingEvent } from "@prisma/client";
 import { ApiResponse } from "../models/models";
 
@@ -58,7 +56,6 @@ const updatePendingEvent = async (
       where: {
         id: eventId,
       },
-
       data: {
         date,
         eventName,
@@ -110,7 +107,7 @@ const getPendingEventByCreatorId = async (
       });
       return pendingEvent;
     } else {
-      throw new ApiError(httpStatus.BAD_REQUEST, "User did not found");
+      throw new ApiError(httpStatus.BAD_REQUEST, "User not found");
     }
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
@@ -122,23 +119,49 @@ const approvePendingEvent = async (
   eventId: string,
 ): Promise<ApiResponse<any>> => {
   try {
-    const event = await prisma.pendingEvent.update({
-      where: {
-        id: eventId,
-      },
-      data: {
-        isActive: true,
-      },
+    // Fetch the pending event outside the transaction to reduce transaction duration
+    const pendingEvent = await prisma.pendingEvent.findUnique({
+      where: { id: eventId },
     });
 
-    const eventResult = await eventService.createEventFromPendingApprove(
-      eventId,
+    if (!pendingEvent) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "PendingEvent not found");
+    }
+
+    // Create event and ticket categories within a single transaction
+    const { newEvent, ticketCategories } = await prisma.$transaction(
+      async (transaction) => {
+        const newEvent = await eventService.createEventFromPendingApprove(
+          pendingEvent,
+          transaction,
+        );
+        const ticketCategories = await eventService.createTicketCategories(
+          JSON.stringify(pendingEvent.ticketPriceEntity),
+          newEvent.id,
+          transaction,
+        );
+        return { newEvent, ticketCategories };
+      },
+      { maxWait: 30000, timeout: 30000 },
     );
 
-    //todo blockchain - update adresses ticket and event
+    // Create tickets in a separate step
+    await eventService.createTickets(
+      newEvent,
+      ticketCategories,
+      pendingEvent,
+      newEvent.contractAddress,
+    );
 
-    return { date: new Date(), success: true, data: eventResult };
+    // Update pending event status
+    await prisma.pendingEvent.update({
+      where: { id: eventId },
+      data: { isActive: true },
+    });
+
+    return { date: new Date(), success: true, data: newEvent };
   } catch (error) {
+    console.error("Error approving event:", error);
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
 };
@@ -146,9 +169,7 @@ const approvePendingEvent = async (
 const rejectPendingEvent = async (eventId: string): Promise<boolean> => {
   try {
     await prisma.pendingEvent.delete({
-      where: {
-        id: eventId,
-      },
+      where: { id: eventId },
     });
 
     return true;

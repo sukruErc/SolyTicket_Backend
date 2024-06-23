@@ -1,10 +1,18 @@
+import {
+  PendingEvent,
+  Prisma,
+  PrismaClient,
+  Tickets,
+  ViewedEvent,
+} from "@prisma/client";
 import httpStatus from "http-status";
 import prisma from "../dbClient";
 import ApiError from "../utils/ApiError";
 import { Event, TicketCategory } from "@prisma/client";
 import { ApiResponse } from "../models/models";
-import { connect } from "http2";
 import blockchainService from "../services/blockchain.service";
+import { v4 as uuidv4 } from "uuid";
+import { connect } from "http2";
 
 interface FilterEventsParams {
   page: number;
@@ -18,79 +26,75 @@ interface FilterEventsParams {
 }
 
 const createEventFromPendingApprove = async (
-  pendingEventId: string,
+  pendingEvent: PendingEvent,
+  transaction: Prisma.TransactionClient,
 ): Promise<Event> => {
-  try {
-    const pendingEvent = await getPendingEventById(pendingEventId);
-
-    if (!pendingEvent) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "PendingEvent not found");
-    }
-
-    const eventContractAddress = await blockchainService.CreateNewNftContract(
-      "test",
-      10,
+  if (pendingEvent.isActive) {
+    throw new ApiError(
+      httpStatus.BAD_REQUEST,
+      "Organizasyon daha önceden oluşturuldu",
     );
-
-    if (!eventContractAddress) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "Error in deploying contract");
-    }
-
-    const newEvent = await prisma.event.create({
-      data: {
-        creatorId: { connect: { id: pendingEvent.userId } },
-        date: pendingEvent.date,
-        desc: pendingEvent.desc,
-        eventName: pendingEvent.eventName,
-        eventCategory: { connect: { id: pendingEvent.categoryId } },
-        eventCategoryType: { connect: { id: pendingEvent.categoryTypeId } },
-        image: pendingEvent.image,
-        location: { connect: { id: pendingEvent.locationId } },
-        contractAddress: eventContractAddress ? eventContractAddress : "",
-        time: pendingEvent.time,
-
-        // searchTitle: pendingEvent.searchTitle,
-      },
-    });
-    if (!pendingEvent.ticketPriceEntity) {
-      throw new ApiError(httpStatus.BAD_REQUEST, "ticketPriceEntity not found");
-    }
-    const ticketEntityString = JSON.stringify(pendingEvent.ticketPriceEntity);
-    const ticketCategories = await createTicketCategories(
-      ticketEntityString,
-      newEvent.id,
-    );
-
-    // for (const ticketCat of ticketCategories) {
-    //   for (let i = 0; i < ticketCat.quantity; i++) {
-    //     await prisma.tickets.create({
-    //       data: {
-    //         owner: { connect: { id: pendingEvent.userId } },
-    //         event: { connect: { id: newEvent.id } },
-    //         ticketCategory: { connect: { id: ticketCat.id } },
-    //         ticketTypeName: ticketCat.name,
-    //       },
-    //     });
-    //   }
-    // }
-
-    return newEvent;
-  } catch (error) {
-    console.log(error);
-    throw new ApiError(httpStatus.BAD_REQUEST, error as any);
   }
+
+  if (!pendingEvent.ticketPriceEntity) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "ticketPriceEntity not found");
+  }
+
+  const ticketEntity = pendingEvent.ticketPriceEntity as unknown as {
+    name: string;
+    quantity: number;
+    price: string;
+  }[];
+
+  const totalQuantity = ticketEntity.reduce((sum, ticketCat) => {
+    return sum + ticketCat.quantity;
+  }, 0);
+
+  const eventContractAddress = await blockchainService.CreateNewNftContract(
+    pendingEvent.eventName,
+    totalQuantity,
+  );
+
+  if (!eventContractAddress) {
+    throw new ApiError(httpStatus.BAD_REQUEST, "Error in deploying contract");
+  }
+
+  const newEvent = await transaction.event.create({
+    data: {
+      userId: pendingEvent.userId,
+      date: pendingEvent.date,
+      desc: pendingEvent.desc,
+      eventName: pendingEvent.eventName,
+      categoryId: pendingEvent.categoryId,
+      categoryTypeId: pendingEvent.categoryTypeId,
+      locationId: pendingEvent.locationId,
+      contractAddress: eventContractAddress,
+      time: pendingEvent.time,
+      image: pendingEvent.image,
+      priceLabel: "",
+    },
+  });
+
+  const ticketCategories = await createTicketCategories(
+    JSON.stringify(ticketEntity),
+    newEvent.id,
+    transaction,
+  );
+
+  return newEvent;
 };
 
 const createTicketCategories = async (
   ticketEntity: string,
   eventId: string,
+  transaction: Prisma.TransactionClient,
 ): Promise<TicketCategory[]> => {
   const categories = JSON.parse(ticketEntity);
-  let list = [];
+  const list = [];
   for (const category of categories) {
-    const res = await prisma.ticketCategory.create({
+    const res = await transaction.ticketCategory.create({
       data: {
-        event: { connect: { id: eventId } },
+        eventId,
         name: category.name,
         price: parseFloat(category.price),
         quantity: parseInt(category.quantity),
@@ -100,6 +104,71 @@ const createTicketCategories = async (
   }
   return list;
 };
+
+const createTickets = async (
+  newEvent: Event,
+  ticketCategories: TicketCategory[],
+  pendingEvent: PendingEvent,
+  eventContractAddress: string,
+): Promise<void> => {
+  let tokenCounter = 0;
+  const ticketData: Tickets[] = [];
+
+  for (const ticketCat of ticketCategories) {
+    for (let i = 0; i < ticketCat.quantity; i++) {
+      const resFromMint = await blockchainService.generateTicketNFT(
+        newEvent.image,
+        newEvent.eventName,
+        newEvent.desc ?? "",
+        tokenCounter,
+        eventContractAddress,
+      );
+      if (resFromMint) {
+        ticketData.push({
+          id: uuidv4(), // Ensure uuidv4() returns a string
+          userId: pendingEvent.userId,
+          eventId: newEvent.id,
+          ticketCategoryId: ticketCat.id,
+          ticketTypeName: ticketCat.name,
+          price: ticketCat.price,
+          tokenId: 0,
+          isUsed: false,
+          sold: false,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          heldUntil: null,
+        });
+        tokenCounter++;
+      }
+    }
+  }
+
+  if (ticketData.length > 0) {
+    await prisma.tickets.createMany({
+      data: ticketData,
+    });
+  }
+};
+// const createTicketCategories = async (
+//   ticketEntity: string,
+//   eventId: string,
+//   transaction: Prisma.TransactionClient,
+// ): Promise<TicketCategory[]> => {
+//   const categories = JSON.parse(ticketEntity);
+//   let list = [];
+//   for (const category of categories) {
+//     const res = await transaction.ticketCategory.create({
+//       data: {
+//         eventId,
+//         name: category.name,
+//         price: parseFloat(category.price),
+//         quantity: parseInt(category.quantity),
+//       },
+//     });
+//     list.push(res);
+//   }
+//   return list;
+// };
 
 const getEventById = async <Key extends keyof Event>(
   eventId: string,
@@ -117,6 +186,7 @@ const getEventById = async <Key extends keyof Event>(
           select: {
             id: true,
             name: true,
+            createdAt: true,
           },
         },
       },
@@ -188,6 +258,8 @@ const getEventsByFilter = async (
   locationId: string,
   endDate: string,
   categoryTypeId: string,
+  categoryId: string,
+  organizerId: string,
   sortBy = "date",
   sortOrder = "asc",
 ): Promise<ApiResponse<Event[]>> => {
@@ -210,6 +282,14 @@ const getEventsByFilter = async (
       filters.categoryTypeId = categoryTypeId;
     }
 
+    if (categoryId) {
+      filters.categoryId = categoryId;
+    }
+
+    if (organizerId) {
+      filters.userId = organizerId;
+    }
+
     const sortOptions: Record<string, any> = {};
     if (sortBy) {
       sortOptions[sortBy] = sortOrder;
@@ -221,6 +301,7 @@ const getEventsByFilter = async (
         location: true,
         eventCategory: true,
         eventCategoryType: true,
+        creatorId: true,
       },
       skip: (page - 1) * pageSize,
       take: pageSize,
@@ -341,12 +422,98 @@ async function getPendingEventById(id: string) {
   });
 }
 
+const addViewedEvent = async (
+  eventId: string,
+  userId: string,
+): Promise<ApiResponse<ViewedEvent>> => {
+  try {
+    const event = await prisma.event.findUnique({
+      where: {
+        id: eventId,
+      },
+    });
+    if (!event) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Etkinlik Bulunamadı");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+    });
+    if (!user) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı bulunamadı");
+    }
+
+    const res = await prisma.viewedEvent.create({
+      data: {
+        event: { connect: { id: eventId } },
+        user: { connect: { id: userId } },
+      },
+    });
+
+    return { date: new Date(), data: res, success: true, message: "Success" };
+  } catch (error) {
+    console.error("Error searching events:", error);
+    throw error;
+  }
+};
+
+const getSimilarEvents = async (
+  eventId: string,
+): Promise<ApiResponse<Event[]>> => {
+  try {
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+      include: {
+        eventCategory: true,
+        eventCategoryType: true,
+      },
+    });
+
+    if (!event) {
+      throw new Error("Etkinlik Bulunamadı");
+    }
+
+    // Fetch events with the same category and category type
+    const similarEvents = await prisma.event.findMany({
+      where: {
+        id: { not: eventId },
+        categoryId: event.categoryId,
+        categoryTypeId: event.categoryTypeId,
+      },
+      include: {
+        location: true,
+        eventCategory: true,
+        eventCategoryType: true,
+        creatorId: true,
+      },
+    });
+
+    // Shuffle and select 4 random events
+    const shuffledEvents = similarEvents.sort(() => 0.5 - Math.random());
+    const selectedEvents = shuffledEvents.slice(0, 4);
+    return {
+      success: true,
+      date: new Date(),
+      data: selectedEvents,
+    };
+  } catch (error) {
+    console.error("Error searching events:", error);
+    throw error;
+  }
+};
+
 export default {
   createEventFromPendingApprove,
   getEventById,
   getEventByCategory,
   getEventByCategoryType,
   getEventByNameSearch,
+  createTicketCategories,
   getEventsByFilter,
   buyEventTicket,
+  createTickets,
+  addViewedEvent,
+  getSimilarEvents,
 };

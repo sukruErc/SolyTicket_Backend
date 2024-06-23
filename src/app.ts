@@ -6,6 +6,7 @@ import { ApiError } from "./utils";
 import { error, xss } from "./middlewares";
 import router from "./routes/v1/index";
 import bodyParser from "body-parser";
+import "./services/subscriptionBatch";
 
 const app = express();
 

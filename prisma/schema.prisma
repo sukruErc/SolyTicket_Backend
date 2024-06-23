@@ -26,7 +26,6 @@ model User {
   updatedAt          DateTime             @updatedAt
   Event              Event[]
   PendingEvent       PendingEvent[]
-  // Tickets            Tickets[]
   MemoryTicket       MemoryTicket[]
   ViewedEvent        ViewedEvent[] // Relation to ViewedEvent
   LoginAttempt       LoginAttempt[] // Relation to LoginAttempt
@@ -35,8 +34,39 @@ model User {
   PasswordResetToken PasswordResetToken[]
   blockchainInfo     BlockchainInfo?
   Tickets            Tickets[]
+  Subscription       Subscription[] // Relation to Subscription
+  Family             Family?              @relation(fields: [familyId], references: [id])
+  familyId           String?
 
   @@unique([email, bcAddress])
+}
+
+model Subscription {
+  id        String   @id @default(uuid())
+  price     Float
+  startDate DateTime @default(now())
+  endDate   DateTime
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String?  @unique
+  familyId  String?  @unique
+  user      User?    @relation(fields: [userId], references: [id])
+  family    Family?  @relation(fields: [familyId], references: [id])
+
+  @@index([userId])
+  @@index([familyId])
+}
+
+model Family {
+  id           String        @id @default(uuid())
+  name         String
+  users        User[]
+  subscription Subscription?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@unique([name])
 }
 
 model BlockchainInfo {
@@ -64,6 +94,7 @@ model Event {
   categoryId        String
   categoryTypeId    String
   locationId        String
+  priceLabel        String
   createdAt         DateTime          @default(now())
   updatedAt         DateTime          @updatedAt
   ViewedEvent       ViewedEvent[] // Relation to ViewedEvent
@@ -103,16 +134,12 @@ model Tickets {
   ticketTypeName   String
   price            Float
   eventId          String
-  tokenId          String
+  tokenId          Int
   ticketCategoryId String
   isUsed           Boolean        @default(false)
-  // eventCategoryType CategoryType   @relation(fields: [categoryTypeId], references: [id])
-  // eventCategory     Category       @relation(fields: [categoryId], references: [id])
-  // eventName         String
-  userId           String
-  // categoryId        String
-  // categoryTypeId    String
   sold             Boolean        @default(false)
+  heldUntil        DateTime?
+  userId           String
   event            Event          @relation(fields: [eventId], references: [id])
   ticketCategory   TicketCategory @relation(fields: [ticketCategoryId], references: [id])
   createdAt        DateTime       @default(now())
@@ -166,6 +193,12 @@ model Category {
   // Tickets      Tickets[]
 }
 
+model City {
+  id       String     @id @default(uuid())
+  name     String     @unique
+  Location Location[]
+}
+
 model CategoryType {
   id           String         @id @default(uuid())
   name         String         @unique
@@ -179,8 +212,11 @@ model CategoryType {
 model Location {
   id           String         @id @default(uuid())
   name         String         @unique
+  address      String
+  city         City           @relation(fields: [cityId], references: [id])
   Event        Event[]
   PendingEvent PendingEvent[]
+  cityId       String
 }
 
 model ViewedEvent {
@@ -191,7 +227,7 @@ model ViewedEvent {
   userId   String
   eventId  String
 
-  @@unique([userId, eventId])
+  // @@unique([userId, eventId])
 }
 
 model Log {

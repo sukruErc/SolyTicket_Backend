@@ -48,8 +48,8 @@ const createGoogleUser = catchAsync(async (req, res) => {
 
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-  const token = await userService.login(email, password);
-  res.send({ token });
+  const data = await userService.login(email, password);
+  res.send(data);
 });
 
 const getUsers = catchAsync(async (req, res) => {

@@ -32,6 +32,8 @@ const getEventsByFilter = {
     size: Joi.number().required(),
     endDate: Joi.string(),
     categoryTypeId: Joi.string(),
+    categoryId: Joi.string(),
+    organizerId: Joi.string(),
     sortBy: Joi.string().valid("date", "eventName"),
     sortOrder: Joi.string().valid("asc", "desc"),
   }),
@@ -45,6 +47,19 @@ const buyEventTicket = {
   }),
 };
 
+const addViewedEvent = {
+  body: Joi.object().keys({
+    eventId: Joi.string().required(),
+    userId: Joi.string().required(),
+  }),
+};
+
+const getSimilarEvents = {
+  query: Joi.object().keys({
+    eventId: Joi.string().required(),
+  }),
+};
+
 export default {
   getEventById,
   getEventByCategory,
@@ -52,4 +67,6 @@ export default {
   getEventByNameSearch,
   getEventsByFilter,
   buyEventTicket,
+  addViewedEvent,
+  getSimilarEvents,
 };

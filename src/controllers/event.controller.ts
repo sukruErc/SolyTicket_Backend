@@ -38,8 +38,17 @@ const getEventByNameSearch = catchAsync(async (req, res) => {
 });
 
 const getEventsByFilter = catchAsync(async (req: Request, res: Response) => {
-  const { page, size, endDate, locationId, categoryTypeId, sortBy, sortOrder } =
-    req.query;
+  const {
+    page,
+    size,
+    endDate,
+    locationId,
+    categoryTypeId,
+    categoryId,
+    organizerId,
+    sortBy,
+    sortOrder,
+  } = req.query;
 
   const data = await eventService.getEventsByFilter(
     parseInt(page as string, 10),
@@ -47,6 +56,8 @@ const getEventsByFilter = catchAsync(async (req: Request, res: Response) => {
     locationId as string,
     endDate as string,
     categoryTypeId as string,
+    categoryId as string,
+    organizerId as string,
     sortBy as "date" | "eventName",
     sortOrder as "asc" | "desc",
   );
@@ -70,6 +81,25 @@ const buyEventTicket = catchAsync(async (req: Request, res: Response) => {
   res.send(data);
 });
 
+const addViewedEvent = catchAsync(async (req, res) => {
+  const data = await eventService.addViewedEvent(
+    req.body.eventId as string,
+    req.body.userId as string,
+  );
+  if (!data) {
+    throw new ApiError(httpStatus.NOT_FOUND, "events could not found");
+  }
+  res.send(data);
+});
+
+const getSimilarEvents = catchAsync(async (req, res) => {
+  const data = await eventService.getSimilarEvents(req.query.eventId as string);
+  if (!data) {
+    throw new ApiError(httpStatus.NOT_FOUND, "events could not found");
+  }
+  res.send(data);
+});
+
 export default {
   getEventById,
   getEventByCategory,
@@ -77,4 +107,6 @@ export default {
   getEventByNameSearch,
   getEventsByFilter,
   buyEventTicket,
+  addViewedEvent,
+  getSimilarEvents,
 };

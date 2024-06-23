@@ -10,13 +10,14 @@ export const sendVerificationCode = async (userId: string, contact: string) => {
   const verificationCode = Math.floor(
     100000 + Math.random() * 900000,
   ).toString();
+  const expiresAt = new Date(Date.now() + 180 * 1000);
 
   // Store verification code in the database
   await prisma.verificationCode.create({
     data: {
       userId,
       code: verificationCode,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000), // Code expires in 15 minutes
+      expiresAt: expiresAt,
     },
   });
 
@@ -64,7 +65,7 @@ export const sendEmail = async (to: string, subject: string, text: string) => {
     subject,
     text,
   });
-  console.log("Message sent: %s", info.messageId);
+  // console.log("Message sent: %s", info.messageId);
 };
 
 export const generateResetToken = (): string => {

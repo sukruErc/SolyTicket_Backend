@@ -2,18 +2,8 @@ const TicketNftAbi = [
   {
     inputs: [
       {
-        internalType: "bool",
-        name: "saleIsActive",
-        type: "bool",
-      },
-      {
         internalType: "uint256",
         name: "totalTickets",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "availableTickets",
         type: "uint256",
       },
       {
@@ -227,7 +217,7 @@ const TicketNftAbi = [
   },
   {
     inputs: [],
-    name: "_availableTickets",
+    name: "ROYALTY_PERCENTAGE",
     outputs: [
       {
         internalType: "uint256",
@@ -259,19 +249,6 @@ const TicketNftAbi = [
         internalType: "string",
         name: "",
         type: "string",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "_saleIsActive",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
       },
     ],
     stateMutability: "view",
@@ -499,10 +476,52 @@ const TicketNftAbi = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "tokenId",
+        type: "uint256",
+      },
+    ],
+    name: "reclaim",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "renounceOwnership",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "tokenId",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "salePrice",
+        type: "uint256",
+      },
+    ],
+    name: "royaltyInfo",
+    outputs: [
+      {
+        internalType: "address",
+        name: "receiver",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "royaltyAmount",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {

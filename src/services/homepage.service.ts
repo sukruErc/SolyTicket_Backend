@@ -4,6 +4,7 @@ import prisma from "../dbClient";
 import { ApiError } from "../utils";
 import httpStatus from "http-status";
 import { Event } from "@prisma/client";
+import { ApiResponse } from "../models/models";
 
 interface HomepageValues {
   upcomingEventsCount: number;
@@ -22,10 +23,9 @@ interface LocationsForHomepage {
   locationName: string;
 }
 
-async function getHomepageValues(): Promise<HomepageValues> {
+async function getHomepageValues(): Promise<ApiResponse<HomepageValues>> {
   try {
     const today = new Date();
-
     const [upcomingEventsCount, ticketSoldCount, totalCustomerCount] =
       await Promise.all([
         prisma.event.count({
@@ -43,7 +43,12 @@ async function getHomepageValues(): Promise<HomepageValues> {
         }),
       ]);
 
-    return { upcomingEventsCount, ticketSoldCount, totalCustomerCount };
+    return {
+      date: new Date(),
+      success: true,
+      message: "S",
+      data: { upcomingEventsCount, ticketSoldCount, totalCustomerCount },
+    };
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
     //   throw new Error("Error in homepage values");

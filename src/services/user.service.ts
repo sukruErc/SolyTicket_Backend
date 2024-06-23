@@ -78,7 +78,12 @@ const createUser = async (
 
   await sendVerificationCode(newUser.id, email);
 
-  return { success: true, date: new Date(), message: "Verification code sent" };
+  return {
+    success: true,
+    date: new Date(),
+    message: "Verification code sent",
+    data: { userId: newUser.id },
+  };
 };
 
 const verify = async (
@@ -91,15 +96,26 @@ const verify = async (
   }
 
   const isValid = await verifyCode(userId, code);
-
   if (!isValid) {
+    const verificationCode = await prisma.verificationCode.findMany({
+      where: { userId: userId },
+    });
+
+    if (verificationCode) {
+      await prisma.verificationCode.delete({
+        where: { id: verificationCode[0].id },
+      });
+    }
+    await prisma.blockchainInfo.delete({ where: { userId: userId } });
+    await prisma.user.delete({ where: { id: userId } });
     throw new ApiError(
       httpStatus.BAD_REQUEST,
-      "Invalid or expired verification code",
+      "Süresi Dolmuş veya Geçersiz Kod",
     );
   }
+
   const accessToken = jwt.sign(
-    { userId: user.id, role: user.type },
+    { userId: user.id, role: user.type, name: user.name },
     "solyKey",
     {
       expiresIn: "1d",
@@ -160,7 +176,7 @@ const createGoogleUser = async (
   }
   //todo secrekey
   const accessToken = jwt.sign(
-    { userId: newUser.id, role: newUser.type },
+    { userId: newUser.id, role: newUser.type, name: newUser.name },
     "solyKey",
     {
       expiresIn: "1d",
@@ -220,7 +236,7 @@ const createMetamaskUser = async (
   }
   //todo secrekey
   const accessToken = jwt.sign(
-    { userId: newUser.id, role: newUser.type },
+    { userId: newUser.id, role: newUser.type, name: newUser.name },
     "solyKey",
     {
       expiresIn: "1d",
@@ -230,7 +246,10 @@ const createMetamaskUser = async (
   return { accessToken, userId: newUser.id };
 };
 
-const login = async (email: string, password: string): Promise<string> => {
+const login = async (
+  email: string,
+  password: string,
+): Promise<ApiResponse<string>> => {
   const user = await getUserByEmail(email);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
@@ -245,14 +264,19 @@ const login = async (email: string, password: string): Promise<string> => {
   // const wallet = await blockchainService.createMetamaskWallet();
 
   const accessToken = jwt.sign(
-    { userId: user.id, role: user.type },
+    { userId: user.id, role: user.type, name: user.name },
     "solyKey",
     {
       expiresIn: "1d",
     },
   );
 
-  return accessToken;
+  return {
+    success: true,
+    date: new Date(),
+    message: "SUCCESS",
+    data: accessToken,
+  };
 };
 
 const queryUsers = async <Key extends keyof User>(
@@ -381,12 +405,12 @@ const requestPasswordReset = async (
     },
   });
 
-  await sendResetEmail(email, resetToken);
+  // await sendResetEmail(email, resetToken);
   return {
     success: true,
     date: new Date(),
     message: "Verification successful",
-    data: null,
+    data: { resetToken: resetToken },
   };
 };
 
@@ -427,7 +451,7 @@ const resetPassword = async (
   });
 
   const accessToken = jwt.sign(
-    { userId: user.id, role: user.type },
+    { userId: user.id, role: user.type, name: user.name },
     "solyKey",
     {
       expiresIn: "1d",

@@ -1,22 +1,63 @@
 export const FactoryContractAddress =
-  "0xd9145CCE52D386f254917e481eB44e9943F39138";
+  "0x4Ab2382C6B6556e602bfd1a9Fc900e9b182214e6";
 
 const FactoryContractAbi = [
   {
     inputs: [
       {
         internalType: "string",
-        name: "_factoryName",
+        name: "factoryName",
         type: "string",
       },
       {
         internalType: "string",
-        name: "_factoryTag",
+        name: "factoryTag",
         type: "string",
       },
     ],
     stateMutability: "nonpayable",
     type: "constructor",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "owner",
+        type: "address",
+      },
+    ],
+    name: "OwnableInvalidOwner",
+    type: "error",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "account",
+        type: "address",
+      },
+    ],
+    name: "OwnableUnauthorizedAccount",
+    type: "error",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "address",
+        name: "previousOwner",
+        type: "address",
+      },
+      {
+        indexed: true,
+        internalType: "address",
+        name: "newOwner",
+        type: "address",
+      },
+    ],
+    name: "OwnershipTransferred",
+    type: "event",
   },
   {
     anonymous: false,
@@ -34,24 +75,40 @@ const FactoryContractAbi = [
         type: "address",
       },
     ],
-    name: "ContractDeployed",
+    name: "SolyContractDeployed",
     type: "event",
+  },
+  {
+    inputs: [],
+    name: "_factoryName",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "_factoryTag",
+    outputs: [
+      {
+        internalType: "string",
+        name: "",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
   },
   {
     inputs: [
       {
-        internalType: "bool",
-        name: "saleIsActive",
-        type: "bool",
-      },
-      {
         internalType: "uint256",
         name: "totalTickets",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "availableTickets",
         type: "uint256",
       },
       {
@@ -82,29 +139,55 @@ const FactoryContractAbi = [
     type: "function",
   },
   {
-    anonymous: false,
-    inputs: [
+    inputs: [],
+    name: "owner",
+    outputs: [
       {
-        indexed: true,
         internalType: "address",
-        name: "previousOwner",
-        type: "address",
-      },
-      {
-        indexed: true,
-        internalType: "address",
-        name: "newOwner",
+        name: "",
         type: "address",
       },
     ],
-    name: "OwnershipTransferred",
-    type: "event",
+    stateMutability: "view",
+    type: "function",
   },
   {
     inputs: [],
     name: "renounceOwnership",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    name: "solyContracts",
+    outputs: [
+      {
+        internalType: "contract SolyContract",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "totalSolyContracts",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -120,76 +203,6 @@ const FactoryContractAbi = [
     stateMutability: "nonpayable",
     type: "function",
   },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    name: "deployedContracts",
-    outputs: [
-      {
-        internalType: "contract SolyContract",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "factoryName",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "factoryTag",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "getTotalContracts",
-    outputs: [
-      {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "owner",
-    outputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
 ];
+
 export default FactoryContractAbi;
