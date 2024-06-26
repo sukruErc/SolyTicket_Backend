@@ -13,6 +13,7 @@ import {
   verifyCode,
 } from "./verification.service";
 import { ApiResponse } from "../models/models";
+import axios, { AxiosResponse } from "axios";
 
 const USER_KEYS = [
   "id",
@@ -60,7 +61,7 @@ const createUser = async (
       // privateKey: wallet ? wallet.privateKey : "",
       password: hashedPassword,
       image: "String?",
-      birthday: birthday,
+      birthday: new Date(birthday),
       phone: phone,
       // mnemonicIsShown: false,
     },
@@ -84,6 +85,101 @@ const createUser = async (
     message: "Verification code sent",
     data: { userId: newUser.id },
   };
+};
+
+const createUserWithKeycloack = async (
+  email: string,
+  name: string,
+  phone: string,
+  birthday: string,
+  type: Role = Role.CUSTOMER,
+  image?: string,
+): Promise<ApiResponse<any>> => {
+  try {
+    if (await getUserByEmail(email)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Bu Mail Hesabı Kullanılıyor, Lütfen Başka Bir Mail deneyiniz.",
+      );
+    }
+
+    if (await getUserByUsername(name)) {
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Bu İsim Kullanılıyor, Lütfen Başka Bir İsim deneyiniz.",
+      );
+    }
+
+    const getTokenUrl = `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`;
+    const createUserUrl = `${process.env.KEYCLOAK_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users`;
+
+    const reqData = {
+      grant_type: "client_credentials",
+      client_id: process.env.KEYCLOAK_CLIENT_ID,
+      client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
+    };
+
+    const {
+      data: { access_token },
+    } = await axios({
+      url: getTokenUrl,
+      data: reqData,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }).catch((error) => {
+      throw new Error(error);
+    });
+
+    await axios({
+      url: createUserUrl,
+      data: {
+        username: name.split(" ").join("_"),
+        email,
+      },
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${access_token}`,
+      },
+    }).catch((error) => {
+      throw new ApiError(httpStatus.CONFLICT, error.response.data.errorMessage);
+    });
+
+    const wallet = await blockchainService.createMetamaskWallet();
+
+    const newUser = await prisma.user.create({
+      data: {
+        email,
+        name,
+        type,
+        status: true,
+        bcAddress: wallet ? wallet.address : "",
+        password: "",
+        image: "String?",
+        birthday: new Date(birthday),
+        phone,
+      },
+    });
+
+    await prisma.blockchainInfo.create({
+      data: {
+        mnemonic: wallet ? wallet.mnemonic?.phrase : "",
+        privateKey: wallet ? wallet.privateKey : "",
+        userId: newUser.id,
+        mnemonicIsShown: false,
+      },
+    });
+
+    return {
+      success: true,
+      date: new Date(),
+      message: "Keycloack user created",
+      data: { userId: newUser.id },
+    };
+  } catch (error) {
+    throw error;
+  }
 };
 
 const verify = async (
@@ -325,6 +421,16 @@ const getUserByEmail = async <Key extends keyof User>(
   }) as Promise<Pick<User, Key> | null>;
 };
 
+const getUserByUsername = async <Key extends keyof User>(
+  name: string,
+  keys: Key[] = USER_KEYS as Key[],
+): Promise<Pick<User, Key> | null> => {
+  return prisma.user.findFirst({
+    where: { name },
+    select: keys.reduce((obj, k) => ({ ...obj, [k]: true }), {}),
+  }) as Promise<Pick<User, Key> | null>;
+};
+
 const updateUserById = async <Key extends keyof User>(
   userId: string,
   updateBody: Prisma.UserUpdateInput,
@@ -468,6 +574,7 @@ const resetPassword = async (
 
 export default {
   createUser,
+  createUserWithKeycloack,
   createMetamaskUser,
   createGoogleUser,
   login,

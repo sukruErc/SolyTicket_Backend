@@ -6,9 +6,26 @@ import { ApiError } from "./utils";
 import { error, xss } from "./middlewares";
 import router from "./routes/v1/index";
 import bodyParser from "body-parser";
+import session from "express-session";
 import "./services/subscriptionBatch";
+import KeycloakConnect from "keycloak-connect";
+import { keycloakConfig } from "./config/keycloak";
+import { sessionConfig } from "./config/session";
 
 const app = express();
+
+export const memoryStore = new session.MemoryStore();
+
+app.use(session(sessionConfig));
+
+const keycloak = new KeycloakConnect(
+  {
+    store: memoryStore,
+  },
+  keycloakConfig,
+);
+
+keycloak.middleware();
 
 // set security HTTP headers
 app.use(helmet());

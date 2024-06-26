@@ -17,6 +17,20 @@ const createUser = catchAsync(async (req, res) => {
   res.status(httpStatus.CREATED).send(data);
 });
 
+const createUserWithKeycloack = catchAsync(async (req, res) => {
+  const { email, name, phone, birthday, role, image } = req.body;
+
+  const data = await userService.createUserWithKeycloack(
+    email,
+    name,
+    phone,
+    birthday,
+    role,
+    image,
+  );
+  res.status(httpStatus.CREATED).send(data);
+});
+
 const createMetamaskUser = catchAsync(async (req, res) => {
   const { email, password, wallet, name, birthday, role, nameForNFT, image } =
     req.body;
@@ -104,6 +118,7 @@ const getMne = catchAsync(async (req, res) => {
 
 export default {
   createUser,
+  createUserWithKeycloack,
   createMetamaskUser,
   createGoogleUser,
   login,

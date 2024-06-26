@@ -18,6 +18,13 @@ router
   .post(validate(userValidation.createUser), userController.createUser);
 
 router
+  .route("/signup-keycloack")
+  .post(
+    validate(userValidation.createUser),
+    userController.createUserWithKeycloack,
+  );
+
+router
   .route("/verify")
   .post(validate(userValidation.verify), userController.verify);
 
