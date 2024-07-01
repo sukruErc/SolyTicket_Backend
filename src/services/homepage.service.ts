@@ -21,6 +21,7 @@ interface CategorywithCount {
 interface LocationsForHomepage {
   id: string;
   locationName: string;
+  locationAddress: string;
 }
 
 async function getHomepageValues(): Promise<ApiResponse<HomepageValues>> {
@@ -55,7 +56,9 @@ async function getHomepageValues(): Promise<ApiResponse<HomepageValues>> {
   }
 }
 
-const getRecentEvents = async (limit: number = 10): Promise<Event[]> => {
+const getRecentEvents = async (
+  limit: number = 10,
+): Promise<ApiResponse<Event[]>> => {
   try {
     const upcomingEvents = await prisma.event.findMany({
       where: {
@@ -66,17 +69,30 @@ const getRecentEvents = async (limit: number = 10): Promise<Event[]> => {
       orderBy: {
         date: "asc",
       },
+      include: {
+        location: true,
+        eventCategory: true,
+        eventCategoryType: true,
+        creatorId: true,
+      },
       take: limit,
     });
 
-    return upcomingEvents;
+    return {
+      date: new Date(),
+      success: true,
+      message: "S",
+      data: upcomingEvents,
+    };
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
     //   throw new Error("Error in homepage values");
   }
 };
 
-const getCategoriesWithCount = async (): Promise<CategorywithCount[]> => {
+const getCategoriesWithCount = async (): Promise<
+  ApiResponse<CategorywithCount[]>
+> => {
   try {
     const upcomingEventsByCategory = await prisma.category.findMany({
       select: {
@@ -103,14 +119,19 @@ const getCategoriesWithCount = async (): Promise<CategorywithCount[]> => {
       }),
     );
 
-    return formattedResults;
+    return {
+      date: new Date(),
+      success: true,
+      message: "S",
+      data: formattedResults,
+    };
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
     //   throw new Error("Error in homepage values");
   }
 };
 
-const gethighlightedEvent = async (): Promise<AdEvent[]> => {
+const gethighlightedEvent = async (): Promise<ApiResponse<AdEvent[]>> => {
   try {
     const currentDate = new Date();
     const activeAdEvents = await prisma.adEvent.findMany({
@@ -122,7 +143,12 @@ const gethighlightedEvent = async (): Promise<AdEvent[]> => {
       },
     });
 
-    return activeAdEvents;
+    return {
+      date: new Date(),
+      success: true,
+      message: "S",
+      data: activeAdEvents,
+    };
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
     //   throw new Error("Error in homepage values");
@@ -130,8 +156,8 @@ const gethighlightedEvent = async (): Promise<AdEvent[]> => {
 };
 
 const getLocationsForHomepage = async (
-  limit: number = 10,
-): Promise<LocationsForHomepage[]> => {
+  limit: number = 4,
+): Promise<ApiResponse<LocationsForHomepage[]>> => {
   try {
     const locations = await prisma.location.findMany({
       take: limit,
@@ -141,10 +167,16 @@ const getLocationsForHomepage = async (
       (location) => ({
         id: location.id,
         locationName: location.name,
+        locationAddress: location.address,
       }),
     );
 
-    return formattedResults;
+    return {
+      date: new Date(),
+      success: true,
+      message: "S",
+      data: formattedResults,
+    };
   } catch (error) {
     throw new ApiError(httpStatus.BAD_REQUEST, error as any);
     //   throw new Error("Error in homepage values");

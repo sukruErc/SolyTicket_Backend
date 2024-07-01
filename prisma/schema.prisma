@@ -187,6 +187,7 @@ model SmartContract {
 model Category {
   id           String         @id @default(uuid())
   name         String         @unique
+  image        String
   CategoryType CategoryType[]
   Event        Event[]
   PendingEvent PendingEvent[]
@@ -213,6 +214,7 @@ model Location {
   id           String         @id @default(uuid())
   name         String         @unique
   address      String
+  image        String
   city         City           @relation(fields: [cityId], references: [id])
   Event        Event[]
   PendingEvent PendingEvent[]
