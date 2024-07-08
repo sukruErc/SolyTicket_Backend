@@ -30,6 +30,7 @@ const getEventsByFilter = {
     locationId: Joi.string(),
     page: Joi.number().required(),
     size: Joi.number().required(),
+    cityId: Joi.string(),
     endDate: Joi.string(),
     categoryTypeId: Joi.string(),
     categoryId: Joi.string(),

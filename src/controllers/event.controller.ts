@@ -41,6 +41,7 @@ const getEventsByFilter = catchAsync(async (req: Request, res: Response) => {
   const {
     page,
     size,
+    cityId,
     endDate,
     locationId,
     categoryTypeId,
@@ -53,6 +54,7 @@ const getEventsByFilter = catchAsync(async (req: Request, res: Response) => {
   const data = await eventService.getEventsByFilter(
     parseInt(page as string, 10),
     parseInt(size as string, 10),
+    cityId as string,
     locationId as string,
     endDate as string,
     categoryTypeId as string,
