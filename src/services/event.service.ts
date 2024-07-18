@@ -255,6 +255,7 @@ const getEventByNameSearch = async <Key extends keyof Event>(
 const getEventsByFilter = async (
   page: number,
   pageSize: number,
+  cityId: string,
   locationId: string,
   endDate: string,
   categoryTypeId: string,
@@ -265,8 +266,15 @@ const getEventsByFilter = async (
 ): Promise<ApiResponse<Event[]>> => {
   try {
     const filters: any = {};
+    if (cityId) {
+      filters.location = { cityId };
+    }
+
     if (locationId) {
-      filters.locationId = locationId;
+      if (!filters.location) {
+        filters.location = {};
+      }
+      filters.location.id = locationId;
     }
 
     filters.date = { gte: new Date() };
@@ -294,11 +302,16 @@ const getEventsByFilter = async (
     if (sortBy) {
       sortOptions[sortBy] = sortOrder;
     }
+
     const events = await prisma.event.findMany({
       where: filters,
       orderBy: sortOptions,
       include: {
-        location: true,
+        location: {
+          include: {
+            city: true, // Include city data
+          },
+        },
         eventCategory: true,
         eventCategoryType: true,
         creatorId: true,
