@@ -88,6 +88,7 @@ const verify = {
   body: Joi.object().keys({
     code: Joi.string().required(),
     userId: Joi.string().required(),
+    password: Joi.string().required(),
   }),
 };
 
