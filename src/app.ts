@@ -42,7 +42,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(xss());
 
 // enable cors
-app.use(cors());
+app.use(cors({
+  origin: '*'
+}));
 
 // v1 api routes
 app.use("/v1", router);

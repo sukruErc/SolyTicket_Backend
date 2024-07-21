@@ -43,7 +43,7 @@ async function getHomepageValues(): Promise<ApiResponse<HomepageValues>> {
           },
         }),
       ]);
-
+      console.log(ticketSoldCount)
     return {
       date: new Date(),
       success: true,
