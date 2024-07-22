@@ -13,7 +13,8 @@ import {
   verifyCode,
 } from "./verification.service";
 import { ApiResponse } from "../models/models";
-import axios, { AxiosResponse } from "axios";
+import axios, { AxiosError } from "axios";
+import qs from "qs";
 
 const USER_KEYS = [
   "id",
@@ -87,8 +88,33 @@ const createUser = async (
   };
 };
 
+const getAccessTokenKeycloak = async () => {
+  const getTokenUrl = `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`;
+
+  const reqData = {
+    grant_type: "client_credentials",
+    client_id: process.env.KEYCLOAK_CLIENT_ID,
+    client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
+  };
+
+  const {
+    data: { access_token },
+  } = await axios({
+    url: getTokenUrl,
+    data: reqData,
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  }).catch((error) => {
+    throw new Error(error);
+  });
+  return access_token;
+};
+
 const createUserWithKeycloack = async (
   email: string,
+  password: string,
   name: string,
   phone: string,
   birthday: string,
@@ -103,41 +129,28 @@ const createUserWithKeycloack = async (
       );
     }
 
-    if (await getUserByUsername(name)) {
-      throw new ApiError(
-        httpStatus.BAD_REQUEST,
-        "Bu İsim Kullanılıyor, Lütfen Başka Bir İsim deneyiniz.",
-      );
-    }
-
-    const getTokenUrl = `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`;
     const createUserUrl = `${process.env.KEYCLOAK_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users`;
 
-    const reqData = {
-      grant_type: "client_credentials",
-      client_id: process.env.KEYCLOAK_CLIENT_ID,
-      client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
-    };
+    const access_token = await getAccessTokenKeycloak();
 
-    const {
-      data: { access_token },
-    } = await axios({
-      url: getTokenUrl,
-      data: reqData,
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    }).catch((error) => {
-      throw new Error(error);
-    });
-
+    // create keycloak user
     await axios({
       url: createUserUrl,
       data: {
-        username: name.split(" ").join("_"),
+        username: email,
         email,
+        firstName: name,
+        lastName: name,
+        enabled: true,
+        credentials: [
+          {
+            type: "password",
+            value: password,
+            temporary: false,
+          },
+        ],
       },
+
       method: "POST",
       headers: {
         Authorization: `Bearer ${access_token}`,
@@ -146,6 +159,8 @@ const createUserWithKeycloack = async (
       throw new ApiError(httpStatus.CONFLICT, error.response.data.errorMessage);
     });
 
+    const hashedPassword = await bcrypt.hash(password, 10);
+
     const wallet = await blockchainService.createMetamaskWallet();
 
     const newUser = await prisma.user.create({
@@ -153,9 +168,9 @@ const createUserWithKeycloack = async (
         email,
         name,
         type,
-        status: true,
+        status: false,
         bcAddress: wallet ? wallet.address : "",
-        password: "",
+        password: hashedPassword,
         image: "String?",
         birthday: new Date(birthday),
         phone,
@@ -171,6 +186,8 @@ const createUserWithKeycloack = async (
       },
     });
 
+    await sendVerificationCode(newUser.id, email);
+
     return {
       success: true,
       date: new Date(),
@@ -182,48 +199,201 @@ const createUserWithKeycloack = async (
   }
 };
 
-const verify = async (
-  code: string,
-  userId: string,
-): Promise<ApiResponse<any>> => {
-  const user = await getUserById(userId);
-  if (!user) {
-    throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı Bulunamadı");
-  }
+const isAxiosError = (error: unknown): error is AxiosError => {
+  return axios.isAxiosError(error);
+};
 
-  const isValid = await verifyCode(userId, code);
-  if (!isValid) {
-    const verificationCode = await prisma.verificationCode.findMany({
-      where: { userId: userId },
+const keycloakFindUser = async (adminAccessToken: string, email: string) => {
+  let keycloakUserResponse;
+  try {
+    keycloakUserResponse = await axios({
+      url: `${process.env.KEYCLOAK_URL}/admin/realms/${
+        process.env.KEYCLOAK_REALM
+      }/users?email=${encodeURIComponent(email)}`,
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${adminAccessToken}`,
+      },
     });
-
-    if (verificationCode) {
-      await prisma.verificationCode.delete({
-        where: { id: verificationCode[0].id },
-      });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      console.error(
+        `Kullanıcısı arama hatası: ${
+          error.response ? error.response.data : error.message
+        }`,
+      );
+    } else {
+      console.error(`Bilinmeyen hata: ${error}`);
     }
-    await prisma.blockchainInfo.delete({ where: { userId: userId } });
-    await prisma.user.delete({ where: { id: userId } });
     throw new ApiError(
-      httpStatus.BAD_REQUEST,
-      "Süresi Dolmuş veya Geçersiz Kod",
+      httpStatus.INTERNAL_SERVER_ERROR,
+      "Kullanıcısı aranamadı",
     );
   }
 
-  const accessToken = jwt.sign(
-    { userId: user.id, role: user.type, name: user.name },
-    "solyKey",
-    {
-      expiresIn: "1d",
-    },
-  );
+  if (!keycloakUserResponse.data || keycloakUserResponse.data.length === 0) {
+    throw new ApiError(httpStatus.NOT_FOUND, "Kullanıcısı bulunamadı");
+  }
+  return keycloakUserResponse;
+};
 
-  return {
-    success: true,
-    date: new Date(),
-    message: "Verification successful",
-    data: accessToken,
+const verify = async (
+  code: string,
+  userId: string,
+  password: string,
+): Promise<ApiResponse<any>> => {
+  try {
+    const user = await getUserById(userId);
+    if (!user) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı bulunamadı");
+    }
+
+    const isValid = await verifyCode(userId, code);
+    if (!isValid) {
+      const verificationCode = await prisma.verificationCode.findMany({
+        where: { userId: userId },
+      });
+
+      if (verificationCode) {
+        await prisma.verificationCode.delete({
+          where: { id: verificationCode[0].id },
+        });
+      }
+      await prisma.blockchainInfo.delete({ where: { userId: userId } });
+      await prisma.user.delete({ where: { id: userId } });
+      throw new ApiError(
+        httpStatus.BAD_REQUEST,
+        "Süresi dolmuş veya geçersiz kod",
+      );
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { status: true },
+    });
+
+    const adminAccessToken = await getAccessTokenKeycloak();
+
+    const keycloakUserResponse = await keycloakFindUser(
+      adminAccessToken,
+      user.email,
+    );
+
+    const keycloakUserId = keycloakUserResponse.data[0].id;
+
+    try {
+      await axios({
+        url: `${process.env.KEYCLOAK_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${keycloakUserId}`,
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${adminAccessToken}`,
+          "Content-Type": "application/json",
+        },
+        data: {
+          emailVerified: true,
+          enabled: true,
+          requiredActions: [],
+        },
+      });
+    } catch (error) {
+      if (isAxiosError(error)) {
+        console.error(
+          `Kullanıcısını güncelleme hatası: ${
+            error.response ? error.response.data : error.message
+          }`,
+        );
+      } else {
+        console.error(`Bilinmeyen hata: ${error}`);
+      }
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Kullanıcısı güncellenemedi",
+      );
+    }
+    let data = await keycloakLoginHelper(user.email, password);
+
+    return {
+      success: true,
+      date: new Date(),
+      message: "Doğrulama başarılı",
+      data: { ...data, role: user.type, name: user.name, userId: user.id },
+    };
+  } catch (error) {
+    if (error instanceof ApiError) {
+      throw error;
+    } else {
+      console.error(`Bilinmeyen hata: ${error}`);
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "İç sunucu hatası");
+    }
+  }
+};
+
+const keycloakLoginHelper = async (username: string, password: string) => {
+  const getTokenUrl = `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/token`;
+  const loginData = {
+    grant_type: "password",
+    client_id: process.env.KEYCLOAK_CLIENT_ID,
+    client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
+    username: username,
+    password: password,
   };
+  const loginRequestData = qs.stringify(loginData);
+  try {
+    const { data } = await axios({
+      url: getTokenUrl,
+      data: loginRequestData,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    });
+    return data;
+  } catch (error) {
+    if (isAxiosError(error)) {
+      console.error(
+        `Kullanıcı girişi hatası: ${
+          error.response ? error.response.data : error.message
+        }`,
+      );
+    } else {
+      console.error(`Bilinmeyen hata: ${error}`);
+    }
+    throw new ApiError(httpStatus.UNAUTHORIZED, "Kullanıcısı girişi başarısız");
+  }
+};
+
+const loginToKeycloak = async (
+  username: string,
+  password: string,
+): Promise<ApiResponse<any>> => {
+  try {
+    const data = await keycloakLoginHelper(username, password);
+    const user = await prisma.user.findUnique({ where: { email: username } });
+    if (!user) {
+      throw new ApiError(httpStatus.BAD_REQUEST, "Kullanıcı bulunamadı");
+    }
+    return {
+      success: true,
+      date: new Date(),
+      message: "Doğrulama başarılı",
+      data: { ...data, role: user.type, name: user.name, userId: user.id },
+    };
+  } catch (error) {
+    if (isAxiosError(error)) {
+      console.error(
+        `Kullanıcı girişi hatası: ${
+          error.response ? error.response.data : error.message
+        }`,
+      );
+      throw new ApiError(
+        httpStatus.UNAUTHORIZED,
+        "Kullanıcısı girişi başarısız",
+      );
+    } else {
+      console.error(`Bilinmeyen hata: ${error}`);
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "İç sunucu hatası");
+    }
+  }
 };
 
 const createGoogleUser = async (
@@ -542,7 +712,7 @@ const resetPassword = async (
   });
 
   if (!resetTokenRecord) {
-    throw new Error("Token is invalid or has expired");
+    throw new Error("Kodun süresi dolmuştur");
   }
 
   const hashedPassword = await bcrypt.hash(newPassword, 10);
@@ -552,23 +722,62 @@ const resetPassword = async (
     data: { password: hashedPassword },
   });
 
+  const adminAccessToken = await getAccessTokenKeycloak();
+
+  const keycloakUserResponse = await keycloakFindUser(
+    adminAccessToken,
+    user.email,
+  );
+
+  const keycloakUserId = keycloakUserResponse.data[0].id;
+  try {
+    await axios({
+      url: `${process.env.KEYCLOAK_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users/${keycloakUserId}/reset-password`,
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${adminAccessToken}`,
+        "Content-Type": "application/json",
+      },
+      data: {
+        type: "password",
+        value: newPassword,
+        temporary: false,
+      },
+    });
+  } catch (error) {
+    if (isAxiosError(error)) {
+      console.error(
+        `Keycloak şifre sıfırlama hatası: ${
+          error.response ? error.response.data : error.message
+        }`,
+      );
+      throw new ApiError(
+        httpStatus.INTERNAL_SERVER_ERROR,
+        "Keycloak şifre sıfırlama başarısız",
+      );
+    } else {
+      console.error(`Bilinmeyen hata: ${error}`);
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "İç sunucu hatası");
+    }
+  }
+
   await prisma.passwordResetToken.deleteMany({
     where: { userId: resetTokenRecord.userId },
   });
 
-  const accessToken = jwt.sign(
-    { userId: user.id, role: user.type, name: user.name },
-    "solyKey",
-    {
-      expiresIn: "1d",
-    },
-  );
+  // const accessToken = jwt.sign(
+  //   { userId: user.id, role: user.type, name: user.name },
+  //   "solyKey",
+  //   {
+  //     expiresIn: "1d",
+  //   },
+  // );
 
   return {
     success: true,
     date: new Date(),
     message: "Verification successful",
-    data: accessToken,
+    // data: accessToken,
   };
 };
 
@@ -587,4 +796,5 @@ export default {
   verify,
   resetPassword,
   requestPasswordReset,
+  loginToKeycloak,
 };

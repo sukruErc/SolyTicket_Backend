@@ -284,7 +284,7 @@ const getEventsByFilter = async (
       if (!filters.date) {
         filters.date = {};
       }
-      filters.date.lte = new Date(endDate);
+      filters.date.gte = new Date(endDate);
     }
 
     if (categoryTypeId) {

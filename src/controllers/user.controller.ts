@@ -18,10 +18,11 @@ const createUser = catchAsync(async (req, res) => {
 });
 
 const createUserWithKeycloack = catchAsync(async (req, res) => {
-  const { email, name, phone, birthday, role, image } = req.body;
+  const { email, password, name, phone, birthday, role, image } = req.body;
 
   const data = await userService.createUserWithKeycloack(
     email,
+    password,
     name,
     phone,
     birthday,
@@ -62,7 +63,7 @@ const createGoogleUser = catchAsync(async (req, res) => {
 
 const login = catchAsync(async (req, res) => {
   const { email, password } = req.body;
-  const data = await userService.login(email, password);
+  const data = await userService.loginToKeycloak(email, password);
   res.send(data);
 });
 
@@ -70,7 +71,7 @@ const getUsers = catchAsync(async (req, res) => {
   const filter = pick(req.query, ["name", "role"]);
   const options = pick(req.query, ["sortBy", "limit", "page"]);
   const result = await userService.queryUsers(filter, options);
-  res.send(result);
+  res.send("result");
 });
 
 const getUser = catchAsync(async (req, res) => {
@@ -92,7 +93,11 @@ const deleteUser = catchAsync(async (req, res) => {
 });
 
 const verify = catchAsync(async (req, res) => {
-  const response = await userService.verify(req.body.code, req.body.userId);
+  const response = await userService.verify(
+    req.body.code,
+    req.body.userId,
+    req.body.password,
+  );
   res.send(response);
 });
 
