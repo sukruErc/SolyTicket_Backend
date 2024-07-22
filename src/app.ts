@@ -41,16 +41,24 @@ app.use(express.urlencoded({ extended: true }));
 // sanitize request data
 app.use(xss());
 
+
+
 // enable cors
 app.use(cors({
-  origin: '*'
+  origin: '*',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['*'],
+  credentials: true
 }));
+
 
 // v1 api routes
 app.use("/v1", router);
 
 // send back a 404 error for any unknown api request
 app.use((req, res, next) => {
+  //log error
+  console.log("request not found : " + req.url + " " + req.method + " " + new Date());
   next(new ApiError(httpStatus.NOT_FOUND, "Not found"));
 });
 
@@ -59,5 +67,12 @@ app.use(error.errorConverter);
 
 // handle error
 app.use(error.errorHandler);
+
+//log called endpoints
+
+app.use((req, res, next) => {
+  console.log(req.method + " " + req.url);
+  next();
+});
 
 export default app;

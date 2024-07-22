@@ -25,7 +25,7 @@ const PublicKey = "0x827f629C4b70D99c2564F499bB6B0b7D554b3b7B";
 const rpcUrl = "https://rpc-mumbai.maticvigil.com";
 // ipfs node url
 const ipfsBaseUrl = "https://ipfs.io/ipfs/";
-registerFont("./Oswald-VariableFont_wght.ttf", { family: "Oswald ExtraLight" });
+// registerFont("./Oswald-VariableFont_wght.ttf", { family: "Oswald ExtraLight" });
 //alchemy
 const apiKey = "UmemkVUs4Lzk2SRvGORKFH8stUI3ksts";
 const achBaseUrl = "https://polygon-mumbai.g.alchemy.com/v2/";
@@ -242,7 +242,7 @@ async function imageWithLabelConverter(displayName: string): Promise<string> {
 
   ctx.drawImage(image, 0, 0);
 
-  ctx.font = '140px "Oswald ExtraLight"';
+  // ctx.font = '140px "Oswald ExtraLight"';
 
   ctx.fillStyle = "white";
   ctx.textAlign = "center";

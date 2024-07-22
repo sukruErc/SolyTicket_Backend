@@ -265,6 +265,7 @@ const getEventsByFilter = async (
   sortOrder = "asc",
 ): Promise<ApiResponse<Event[]>> => {
   try {
+    console.log("=========================================================================================================")
     const filters: any = {};
     if (cityId) {
       filters.location = { cityId };
