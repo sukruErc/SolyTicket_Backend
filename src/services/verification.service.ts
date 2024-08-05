@@ -11,7 +11,6 @@ export const sendVerificationCode = async (userId: string, contact: string) => {
     100000 + Math.random() * 900000,
   ).toString();
   const expiresAt = new Date(Date.now() + 180 * 1000);
-
   // Store verification code in the database
   await prisma.verificationCode.create({
     data: {
@@ -48,25 +47,28 @@ export const verifyCode = async (
 };
 
 const transporter = nodemailer.createTransport({
-  host: "mail.artitel.com.tr",
-  port: 587,
-  secure: false,
+  service: 'gmail',
   auth: {
-    user: "sukrucan.ercoban@artitel.com.tr",
-    pass: "sukru2023can.",
+    user: 'solyticketdev@gmail.com',
+    pass: 'gyoc yqaw xocx bsai', // Use your App Password here
   },
 });
 
+
 // Send email
 export const sendEmail = async (to: string, subject: string, text: string) => {
-  const info = await transporter.sendMail({
-    from: "sukrucan.ercoban@artitel.com.tr",
-    to,
-    subject,
-    text,
-  });
-  // console.log("Message sent: %s", info.messageId);
+  try {
+    const info = await transporter.sendMail({
+      from: "solyticketdev@gmail.com",
+      to,
+      subject,
+      text,
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
 };
+
 
 export const generateResetToken = (): string => {
   return crypto.randomBytes(32).toString("hex");

@@ -67,6 +67,14 @@ const login = catchAsync(async (req, res) => {
   res.send(data);
 });
 
+
+const logout = catchAsync(async (req, res) => {
+  console.log("req.body")
+  const { token } = req.body;
+  const data = await userService.logoutFromKeycloak(token);
+  res.send(data);
+});
+
 const getUsers = catchAsync(async (req, res) => {
   const filter = pick(req.query, ["name", "role"]);
   const options = pick(req.query, ["sortBy", "limit", "page"]);
@@ -135,4 +143,5 @@ export default {
   verify,
   requestPasswordReset,
   resetPassword,
+  logout
 };

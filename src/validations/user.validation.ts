@@ -26,6 +26,13 @@ const createMetamaskUser = {
   }),
 };
 
+const logout = {
+  body: Joi.object().keys({
+    token: Joi.string(),
+  }),
+};
+
+
 const createGoogleUser = {
   body: Joi.object().keys({
     email: Joi.string().required().email(),
@@ -119,4 +126,5 @@ export default {
   verify,
   resetPassword,
   requestPasswordReset,
+  logout
 };

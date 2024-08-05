@@ -25,6 +25,13 @@ router
   );
 
 router
+  .route("/logout")
+  .post(
+    validate(userValidation.logout),
+    userController.logout,
+  );
+
+router
   .route("/verify")
   .post(validate(userValidation.verify), userController.verify);
 

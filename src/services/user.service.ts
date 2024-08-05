@@ -96,7 +96,6 @@ const getAccessTokenKeycloak = async () => {
     client_id: process.env.KEYCLOAK_CLIENT_ID,
     client_secret: process.env.KEYCLOAK_CLIENT_SECRET,
   };
-
   const {
     data: { access_token },
   } = await axios({
@@ -107,6 +106,7 @@ const getAccessTokenKeycloak = async () => {
       "Content-Type": "application/x-www-form-urlencoded",
     },
   }).catch((error) => {
+    console.error("Error fetching access token:", error);
     throw new Error(error);
   });
   return access_token;
@@ -132,7 +132,6 @@ const createUserWithKeycloack = async (
     const createUserUrl = `${process.env.KEYCLOAK_URL}/admin/realms/${process.env.KEYCLOAK_REALM}/users`;
 
     const access_token = await getAccessTokenKeycloak();
-
     // create keycloak user
     await axios({
       url: createUserUrl,
@@ -160,9 +159,7 @@ const createUserWithKeycloack = async (
     });
 
     const hashedPassword = await bcrypt.hash(password, 10);
-
     const wallet = await blockchainService.createMetamaskWallet();
-
     const newUser = await prisma.user.create({
       data: {
         email,
@@ -176,7 +173,6 @@ const createUserWithKeycloack = async (
         phone,
       },
     });
-
     await prisma.blockchainInfo.create({
       data: {
         mnemonic: wallet ? wallet.mnemonic?.phrase : "",
@@ -185,7 +181,6 @@ const createUserWithKeycloack = async (
         mnemonicIsShown: false,
       },
     });
-
     await sendVerificationCode(newUser.id, email);
 
     return {
@@ -781,6 +776,41 @@ const resetPassword = async (
   };
 };
 
+const logoutFromKeycloak = async (token: string): Promise<ApiResponse<any>> => {
+  try {
+    await keycloakLogoutHelper(token);
+    
+    return {
+      success: true,
+      date: new Date(),
+      message: "Çıkış başarılı",
+    };
+  } catch (error) {
+    if (isAxiosError(error)) {
+      console.error(
+        `Çıkış hatası: ${
+          error.response ? error.response.data : error.message
+        }`,
+      );
+      throw new ApiError(
+        httpStatus.UNAUTHORIZED,
+        "Çıkış başarısız",
+      );
+    } else {
+      console.error(`Bilinmeyen hata: ${error}`);
+      throw new ApiError(httpStatus.INTERNAL_SERVER_ERROR, "İç sunucu hatası");
+    }
+  }
+};
+const keycloakLogoutHelper = async (token: string) => {
+  const keycloakLogoutUrl = `${process.env.KEYCLOAK_URL}/realms/${process.env.KEYCLOAK_REALM}/protocol/openid-connect/logout`;
+  await axios.post(keycloakLogoutUrl, null, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+};
+
 export default {
   createUser,
   createUserWithKeycloack,
@@ -797,4 +827,5 @@ export default {
   resetPassword,
   requestPasswordReset,
   loginToKeycloak,
+  logoutFromKeycloak
 };
